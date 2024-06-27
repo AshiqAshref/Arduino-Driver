@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <ReminderA.h>
 #include <ReminderB.h>
-#include <Box.h>
 
 #include <HardwareSerial.h>
 #include <LedControl.h>
@@ -12,6 +11,7 @@
 #include <SoftwareSerial.h>
 #include <AccelStepper.h>
 #include <MultiStepper.h>
+#include <Box.h>
 
 #include <Wire.h>
 #include <SPI.h>
@@ -19,7 +19,7 @@
 //  pin 9 is connected to the DataIn
 //  pin 8 is connected to the CLK
 //  pin 7 is connected to LOAD
-LedControl boxLed = LedControl(9, 8, 7, 2); //(DIN, CLK, LOAD, no_of_chained_devices)
+auto boxLed = LedControl(9, 8, 7, 2); //(DIN, CLK, LOAD, no_of_chained_devices)
 LiquidCrystal_I2C lcd(0x27, 16, 2); //(addr, row, col)
 SoftwareSerial espPort(11, 12); //(Rx, Tx)
 
@@ -29,34 +29,34 @@ AccelStepper stepperZ(1,24,25);
 
 
 
-const byte X=40;
-const byte Xa=34;
-const byte Xb=35;
-const byte Xc=36;
+constexpr byte X=40;
+constexpr byte Xa=34;
+constexpr byte Xb=35;
+constexpr byte Xc=36;
 
-const byte Y=41;
-const byte Ya=37;
-const byte Yb=38;
-const byte Yc=39;
+constexpr byte Y=41;
+constexpr byte Ya=37;
+constexpr byte Yb=38;
+constexpr byte Yc=39;
 
-const byte enterButton=2;
-const byte leftButton=3;
-const byte downButton=4;
-const byte rightButton=5;
-const byte upButton=6;
-const byte frontButton=46;
-const byte backButton=47;
+constexpr byte enterButton=2;
+constexpr byte leftButton=3;
+constexpr byte downButton=4;
+constexpr byte rightButton=5;
+constexpr byte upButton=6;
+constexpr byte frontButton=46;
+constexpr byte backButton=47;
 
-const byte zEnable=30;
-const byte yEnable=31;
-const byte xEnable=32;
+constexpr byte zEnable=30;
+constexpr byte yEnable=31;
+constexpr byte xEnable=32;
 
-const byte xLimitSwitch=42;
-const byte zLimitSwitch=43;
-const byte yLimitSwitch=44;
+constexpr byte xLimitSwitch=42;
+constexpr byte zLimitSwitch=43;
+constexpr byte yLimitSwitch=44;
 
-const byte beeper=10;
-const byte buttonDelay=0;
+constexpr byte beeper=10;
+constexpr byte buttonDelay=0;
 
 unsigned long xAxis=0;
 unsigned long yAxis=0;
@@ -107,13 +107,13 @@ ReminderB jsonToClassB(String& dat);
 void menuPage();
 void setupPage();
 void ipMenu();
-boolean confirm(byte *iP);
-String getIp(byte *a);
-String getIpBig(byte *a);
+boolean confirm(const byte *iP);
+String getIp(const byte *a);
+String getIpBig(const byte *a);
 void setIp(byte *temp_SYS_IP);
-void bigToSmall(byte *temp_SYS_IP,byte *bigIp);
+void bigToSmall(byte *temp_SYS_IP, const byte *bigIp);
 void smallToBig(byte *temp_SYS_IP, byte *bigIp);
-String ipSort(String ip);
+String ipSort(const String& ip);
 
 void moveStepper();
 void unlockAllBox();

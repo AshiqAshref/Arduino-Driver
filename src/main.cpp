@@ -9,7 +9,7 @@ void setup() {
   initializeLed();
   initializeLcd();
   initializeSteppers();
-  // bringEmHome();
+  bringEmHome();
 
   delay(350);
   beepFor(500);
@@ -18,18 +18,18 @@ void setup() {
   ledTestFunction();
 
   lcdClear(0);
-  lcd.print("Press to Start");
-  while(!digitalRead(enterButton));
-  delay(500);
+  // lcd.print("Press to Start");
+  // while(!digitalRead(enterButton)) {}
+  // delay(500);
 
-  // unlockAllBox();
-  // bringEmHome();
+  unlockAllBox();
+  bringEmHome();
   // badPosition();
   // unlockBox(14);
 }
 
 
-boolean mainDisplayFlag=1;
+boolean mainDisplayFlag=true;
 boolean startFlag=false;
 void loop() {
   if(mainDisplayFlag==1){
@@ -38,11 +38,11 @@ void loop() {
     lcd.print("Upcomming: 09:36");
     lcd.setCursor(0,1);
     lcd.print("BoxNo: 07");
-    mainDisplayFlag=0;
+    mainDisplayFlag=false;
   }
 
-  boolean enterPressed=0;
-  while(digitalRead(enterButton)) enterPressed=1;
+  boolean enterPressed=false;
+  while(digitalRead(enterButton)) enterPressed=true;
   if(enterPressed){
     menuPage();
   }
@@ -165,20 +165,20 @@ void initializeSteppers(){
 
 
 void menuPage(){
-  boolean idleFlag=1;
-  byte totalCase=2;
-  boolean setupFlag=0;
+  boolean idleFlag=true;
+  boolean setupFlag=false;
   byte caseInt=0;
-  boolean menuFlag=1;
+  boolean menuFlag=true;
 
-  boolean enterState=0;
-  boolean upState=0;
-  boolean downState=0;
+  boolean enterState=false;
+  boolean upState=false;
+  boolean downState=false;
 
   while(menuFlag==1){
-    while(digitalRead(upButton))    upState=1;
-    while(digitalRead(downButton))  downState=1;
-    while(digitalRead(enterButton)) enterState=1;
+    constexpr byte totalCase=2;
+    while(digitalRead(upButton))    upState=true;
+    while(digitalRead(downButton))  downState=true;
+    while(digitalRead(enterButton)) enterState=true;
 
     if(upState==1){
       if(caseInt<=0){
@@ -187,8 +187,8 @@ void menuPage(){
         caseInt--;
       }
 
-      idleFlag=1;
-      upState=0;
+      idleFlag=true;
+      upState=false;
     }
 
     if(downState==1){
@@ -198,19 +198,19 @@ void menuPage(){
         caseInt++;
       }
 
-      idleFlag=1;
-      downState=0;
+      idleFlag=true;
+      downState=false;
     }
 
     if(enterState==1){
       if(caseInt==totalCase){
-        menuFlag=0;
-        mainDisplayFlag=1;
+        menuFlag=false;
+        mainDisplayFlag=true;
       }else if(caseInt==0){
-        setupFlag=1;
-        idleFlag=1;
+        setupFlag=true;
+        idleFlag=true;
       }
-      enterState=0;
+      enterState=false;
 
     }
 
@@ -228,8 +228,8 @@ void menuPage(){
           lcd.setCursor(6,1);
           lcd.print("Help");
 
-          setupFlag=0;
-          idleFlag=0;
+          setupFlag=false;
+          idleFlag=false;
           break;
 
         case 1:
@@ -238,7 +238,7 @@ void menuPage(){
           lcd.print("Setup");
           lcd.setCursor(5,1);
           lcd.print(">Help<");
-          idleFlag=0;
+          idleFlag=false;
           break;
 
         case 2:
@@ -247,7 +247,10 @@ void menuPage(){
           lcd.print("Help");
           lcd.setCursor(5,1);
           lcd.print(">Back<");
-          idleFlag=0;
+          idleFlag=false;
+          break;
+        
+        default:
           break;
 
       }
@@ -259,21 +262,21 @@ void menuPage(){
 
 
 void setupPage(){
-  boolean idleFlag=1;
-  byte totalCase=1;
+  boolean idleFlag=true;
   byte caseInt=0;
-  boolean ipFlag=0;
-  boolean setupFlag=1;
+  boolean ipFlag=false;
+  boolean setupFlag=true;
 
-  boolean enterState=0;
-  boolean upState=0;
-  boolean downState=0;
+  boolean enterState=false;
+  boolean upState=false;
+  boolean downState=false;
 
   while(setupFlag==1){
+    constexpr byte totalCase=1;
 
-    while(digitalRead(upButton))    upState=1;
-    while(digitalRead(downButton))  downState=1;
-    while(digitalRead(enterButton)) enterState=1;
+    while(digitalRead(upButton))    upState=true;
+    while(digitalRead(downButton))  downState=true;
+    while(digitalRead(enterButton)) enterState=true;
 
     if(upState==1){
       if(caseInt<=0){
@@ -282,8 +285,8 @@ void setupPage(){
         caseInt--;
       }
 
-      idleFlag=1;
-      upState=0;
+      idleFlag=true;
+      upState=false;
     }
 
     if(downState==1){
@@ -293,20 +296,20 @@ void setupPage(){
         caseInt++;
       }
 
-      idleFlag=1;
-      downState=0;
+      idleFlag=true;
+      downState=false;
     }
 
     if(enterState==1){
 
       if(caseInt==totalCase){
-        setupFlag=0;
-        idleFlag=0;
+        setupFlag=false;
+        idleFlag=false;
       }else if(caseInt==0){
-        ipFlag=1;
-        idleFlag=1;
+        ipFlag=true;
+        idleFlag=true;
       }
-      enterState=0;
+      enterState=false;
     }
 
     if(idleFlag==1){
@@ -315,7 +318,7 @@ void setupPage(){
         case 0:
           if(ipFlag==1){
             ipMenu();
-            ipFlag=0;
+            ipFlag=false;
           }
           lcd.clear();
           lcd.setCursor(2,0);
@@ -323,7 +326,7 @@ void setupPage(){
           lcd.setCursor(6,1);
           lcd.print("Back");
 
-          idleFlag=0;
+          idleFlag=false;
           break;
 
         case 1:
@@ -332,7 +335,10 @@ void setupPage(){
           lcd.print("Ip address");
           lcd.setCursor(5,1);
           lcd.print(">Back<");
-          idleFlag=0;
+          idleFlag=false;
+          break;
+        
+        default:
           break;
       }
       delay(1);
@@ -368,20 +374,19 @@ void ipMenu(){
   lcd.createChar(2, ip);
   lcd.createChar(3, sb);
 
-  boolean idleFlag=1;
-  byte totalCase=3;
+  boolean idleFlag=true;
   byte caseInt=0;
-  boolean showIpFlag=0;
-  boolean setIpFlag=0;
-  boolean setSbFlag=0;
-  boolean ipFlag=1;
+  boolean showIpFlag=false;
+  boolean setIpFlag=false;
+  boolean setSbFlag=false;
+  boolean ipFlag=true;
 
-  boolean enterState=0;
-  boolean upState=0;
-  boolean downState=0;
+  boolean enterState=false;
+  boolean upState=false;
+  boolean downState=false;
 
   while(ipFlag==1){
-
+    constexpr byte totalCase=3;
     byte temp_SYS_IP[4];
     byte temp_SYS_SB[4];
 
@@ -390,9 +395,9 @@ void ipMenu(){
       temp_SYS_SB[i]=SYSTEM_SB[i];
     }
 
-    while(digitalRead(upButton))    upState=1;
-    while(digitalRead(downButton))  downState=1;
-    while(digitalRead(enterButton)) enterState=1;
+    while(digitalRead(upButton))    upState=true;
+    while(digitalRead(downButton))  downState=true;
+    while(digitalRead(enterButton)) enterState=true;
 
     if(upState==1){
       if(caseInt<=0){
@@ -401,8 +406,8 @@ void ipMenu(){
         caseInt--;
       }
 
-      idleFlag=1;
-      upState=0;
+      idleFlag=true;
+      upState=false;
     }
 
     if(downState==1){
@@ -412,26 +417,26 @@ void ipMenu(){
         caseInt++;
       }
 
-      idleFlag=1;
-      downState=0;
+      idleFlag=true;
+      downState=false;
     }
 
     if(enterState==1){
 
       if(caseInt==totalCase){
-        ipFlag=0;
-        idleFlag=0;
+        ipFlag=false;
+        idleFlag=false;
       }else if(caseInt==0){
-        showIpFlag=1;
-        idleFlag=1;
+        showIpFlag=true;
+        idleFlag=true;
       }else if(caseInt==1){
-        setIpFlag=1;
-        idleFlag=1;
+        setIpFlag=true;
+        idleFlag=true;
       }else if(caseInt==2){
-        setSbFlag=1;
-        idleFlag=1;
+        setSbFlag=true;
+        idleFlag=true;
       }
-      enterState=0;
+      enterState=false;
     }
 
     if(idleFlag==1){
@@ -448,12 +453,12 @@ void ipMenu(){
               lcd.write(3);
               lcd.print(getIp(SYSTEM_SB));
 
-              idleFlag=0;
+              idleFlag=false;
             }
-            while(digitalRead(enterButton))enterState=1;
+            while(digitalRead(enterButton))enterState=true;
             if(enterState==1){
-              enterState=0;
-              showIpFlag=0;
+              enterState=false;
+              showIpFlag=false;
             }
           }
           lcd.clear();
@@ -461,7 +466,7 @@ void ipMenu(){
           lcd.print(">Show Ip<");
           lcd.setCursor(5,1);
           lcd.print("Set Ip");
-          idleFlag=0;
+          idleFlag=false;
           break;
 
         case 1:
@@ -472,14 +477,14 @@ void ipMenu(){
                 SYSTEM_IP[i]=temp_SYS_IP[i];
             }
 
-            setIpFlag=0;
+            setIpFlag=false;
           }
           lcd.clear();
           lcd.setCursor(5,0);
           lcd.print("Show Ip");
           lcd.setCursor(4,1);
           lcd.print(">Set Ip<");
-          idleFlag=0;
+          idleFlag=false;
           break;
 
         case 2:
@@ -489,24 +494,26 @@ void ipMenu(){
               for(int i=0;i<4;i++)
                 SYSTEM_SB[i]=temp_SYS_SB[i];
             }
-            setSbFlag=0;
+            setSbFlag=false;
           }
           lcd.clear();
           lcd.setCursor(5,0);
           lcd.print("Set Ip");
           lcd.setCursor(2,1);
           lcd.print(">Set Subnet<");
-          idleFlag=0;
+          idleFlag=false;
           break;
 
         case 3:
-
           lcd.clear();
           lcd.setCursor(3,0);
           lcd.print("Set Subnet");
           lcd.setCursor(5,1);
           lcd.print(">back<");
-          idleFlag=0;
+          idleFlag=false;
+          break;
+
+        default:
           break;
       }
       delay(1);
@@ -516,64 +523,59 @@ void ipMenu(){
 
 
 
-boolean confirm(byte *iP){
-  boolean rightState=0;
-  boolean leftState=0;
-  boolean enterState=0;
+boolean confirm(const byte *iP){
+  boolean rightState=false;
+  boolean leftState=false;
+  boolean enterState=false;
 
-  boolean idleFlag=1;
-  boolean YoN=0;
-  while(1==1){
-    while(digitalRead(enterButton)) enterState=1;
-    while(digitalRead(leftButton)) leftState=1;
-    while(digitalRead(rightButton)) rightState=1;
+  boolean idleFlag=true;
+  boolean confirmFlag=false;
+  while(true){
+    while(digitalRead(enterButton)) enterState=true;
+    while(digitalRead(leftButton))  leftState=true;
+    while(digitalRead(rightButton)) rightState=true;
 
-    if(leftState==1){
-      leftState=0;
-      if(YoN)
-        YoN=0;
-      else
-        YoN=1;
-      idleFlag=1;
-
-    }else if(rightState==1){
-      rightState=0;
-      if(YoN)
-        YoN=0;
-      else
-        YoN=1;
-      idleFlag=1;
-
-    }else if(enterState==1){
-      enterState=0;
-      if(YoN)
-        return true;
-      else{
-        return false;
-      }
+    if(leftState){
+      leftState=false;
+      idleFlag=true;
+      confirmFlag = !confirmFlag;
+    }else if(rightState){
+      rightState=false;
+      idleFlag=true;
+      confirmFlag = !confirmFlag;
+    }else if(enterState){
+      return confirmFlag;
     }
 
     if(idleFlag==1){
-      if(YoN){
+      if(!confirmFlag){
         lcd.clear();
         lcd.setCursor(1,0);
         lcd.print(getIp(iP));
         lcd.setCursor(0,1);
         lcd.print("Confirm?  Y >N");
-        idleFlag=0;
+        idleFlag=false;
       }else{
         lcd.clear();
         lcd.setCursor(1,0);
         lcd.print(getIp(iP));
         lcd.setCursor(0,1);
         lcd.print("Confirm? >Y  N");
-        idleFlag=0;
+        idleFlag=false;
       }
     }
-
   }
 }
 
+String getIp(const byte *a){
+  String temp;
+  for(int i=0;i<4;i++){
+    temp+=String(a[i]);
+    if(i!=3)
+      temp+='.';
+  }
+  return temp;
+}
 
 
 ReminderA jsonToClass(String& dat){
@@ -610,24 +612,16 @@ ReminderB jsonToClassB(String& dat) {
     suc=false;
   }
   boxesString.trim();
-  return ReminderB(new DateTime(0, 0, 0, H, M, 0), &boxesString, &suc);
+  return {new DateTime(0, 0, 0, H, M, 0), &boxesString, &suc};
 }
 
 
 
-String getIp(byte *a){
-  String temp;
-  for(int i=0;i<4;i++){
-    temp+=String(a[i]);
-    if(i!=3)
-      temp+='.';
-  }
-  return temp;
-}
 
 
 
-String getIpBig(byte *a){
+
+String getIpBig(const byte *a){
   String temp;
   for(int i=0;i<12;i++){
     temp+=String(a[i]);
@@ -667,30 +661,30 @@ void setIp(byte *temp_SYS_IP){
   smallToBig(temp_SYS_IP,temp_IP);
   Serial.println(getIpBig(temp_IP));
 
-  boolean runFlag=1;
-  boolean idleFlag=1;
+  boolean runFlag=true;
+  boolean idleFlag=true;
   byte curPos=0;
   unsigned long blinkTime=0;
-  boolean curStat=0;
+  boolean currentState=false;
   byte dataPos=0;
 
-  boolean enterState=0;
-  boolean upState=0;
-  boolean downState=0;
-  boolean leftState=0;
-  boolean rightState=0;
+  boolean enterState=false;
+  boolean upState=false;
+  boolean downState=false;
+  boolean leftState=false;
+  boolean rightState=false;
 
   while(runFlag==1){
-    while(digitalRead(enterButton)) enterState=1;
-    while(digitalRead(upButton))    upState=1;
-    while(digitalRead(downButton))  downState=1;
-    while(digitalRead(leftButton))    leftState=1;
-    while(digitalRead(rightButton))  rightState=1;
+    while(digitalRead(enterButton)) enterState=true;
+    while(digitalRead(upButton))    upState=true;
+    while(digitalRead(downButton))  downState=true;
+    while(digitalRead(leftButton))    leftState=true;
+    while(digitalRead(rightButton))  rightState=true;
 
     if(enterState==1){
-      enterState=0;
-      runFlag=0;
-      idleFlag=0;
+      enterState=false;
+      runFlag=false;
+      idleFlag=false;
     }else if(rightState==1){
       lcd.setCursor(curPos, 1);
       lcd.write(1);
@@ -706,7 +700,7 @@ void setIp(byte *temp_SYS_IP){
         dataPos++;
       }
 
-      rightState=0;
+      rightState=false;
     }else if(leftState==1){
       lcd.setCursor(curPos, 1);
       lcd.write(1);
@@ -722,7 +716,7 @@ void setIp(byte *temp_SYS_IP){
         dataPos--;
       }
 
-      leftState=0;
+      leftState=false;
     }
     else if(upState==1){
       if(temp_IP[dataPos]>=9)
@@ -730,25 +724,25 @@ void setIp(byte *temp_SYS_IP){
       else
         temp_IP[dataPos]++;
 
-      idleFlag=1;
-      upState=0;
+      idleFlag=true;
+      upState=false;
     }else if(downState==1){
       if(temp_IP[dataPos]<=0)
         temp_IP[dataPos]=9;
       else
         temp_IP[dataPos]--;
 
-      idleFlag=1;
-      downState=0;
+      idleFlag=true;
+      downState=false;
     }
 
     if(millis()-blinkTime>=500){
-      if(curStat==0){
-        curStat=1;
+      if(currentState==0){
+        currentState=true;
         lcd.setCursor(curPos, 1);
         lcd.write(0);
       }else{
-        curStat=0;
+        currentState=false;
         lcd.setCursor(curPos, 1);
         lcd.write(1);
       }
@@ -772,7 +766,7 @@ void setIp(byte *temp_SYS_IP){
         lcd.setCursor(cursor,0);
         lcd.print(String(temp_IP[i]));
       }
-      idleFlag=0;
+      idleFlag=false;
     }
   }
 
@@ -784,8 +778,7 @@ void setIp(byte *temp_SYS_IP){
 
 // Converts 12 byte IP into 4 Byte
 // STILL TEST
-void bigToSmall(byte *temp_SYS_IP,byte *bigIp){
-
+void bigToSmall(byte *temp_SYS_IP, const byte *bigIp){
   String temp;
   byte i=0;
   byte count=0;
@@ -793,7 +786,6 @@ void bigToSmall(byte *temp_SYS_IP,byte *bigIp){
   while(i<=12){
     temp+=String(bigIp[i]);
     count++;
-
       if(count==3){
         temp_SYS_IP[pass]=temp.toInt();
         Serial.println(temp.toInt());
@@ -809,13 +801,11 @@ void bigToSmall(byte *temp_SYS_IP,byte *bigIp){
 
 // Converts 4 byte IP into 12 Byte
 // STILL TEST
-void smallToBig(byte *temp_SYS_IP, byte *bigIp){
-
+void smallToBig(byte const *temp_SYS_IP, byte *bigIp){
   byte bigIpCounter=0;
   for(int i=0;i<4;i++){
     String temp;
     temp=String(temp_SYS_IP[i]);
-
     for(int k=temp.length();(k-3)!=0;k++){
       bigIp[bigIpCounter]=0;
       bigIpCounter++;
@@ -825,7 +815,6 @@ void smallToBig(byte *temp_SYS_IP, byte *bigIp){
       bigIpCounter++;
     }
   }
-
 }
 
 
@@ -834,11 +823,10 @@ void smallToBig(byte *temp_SYS_IP, byte *bigIp){
 // FOR EXAMPLE
 // 192.003.045.200 WILL BE CONVERTED INTO
 //192.3.45.200
-String ipSort(String ip){
+String ipSort(String & ip){
 
   String sortedIp;
   for(int i=0;i<=14;i++){
-
     if(ip.charAt(i)!='0'&& ip.charAt(i)!='.'){
       for(int k=i; (k+1)%4!=0; k++){
         sortedIp+=ip.charAt(k);
@@ -862,14 +850,12 @@ void beepFor(int time){
 
 
 
-void offsetCoordinate(char cordinate, byte offsetPosition, int offSetBy, boolean applyToAll=true){
+void offsetCoordinate(char const cordinate, byte const offsetPosition, int const offSetBy, boolean const applyToAll=true){
   if(cordinate=='X'){
     if(applyToAll==false){
       xCordinate[offsetPosition]=xCordinate[offsetPosition]+offSetBy;
       return;
     }
-
-
   }else if(cordinate=='Y'){
     if(applyToAll==false){
       yCordinate[offsetPosition]=yCordinate[offsetPosition]+offSetBy;
@@ -892,23 +878,23 @@ void stepperState(byte enable, boolean state){
 
 
 unsigned long blinkPrevioustime=0;
-bool blinkStat=0;
-void blink(byte boxNo,char color){
+bool blinkState=false;
+void blink(byte const boxNo,char const color){
   if((millis()-blinkPrevioustime)>500){
     blinkPrevioustime=millis();
-    if(blinkStat)
+    if(blinkState)
       setColor(boxNo, color);
     else
       setColor(boxNo, 'c');
-    blinkStat=!blinkStat;
+    blinkState=!blinkState;
   }
 }
 
 
 
-boolean unlockBox(byte boxNo){
+boolean unlockBox(byte const boxNo){
   if(boxNo<0 || boxNo>15)
-    return 0;
+    return false;
 
   const float stepperXSpeed=stepperX.speed();
   const float stepperYSpeed=stepperY.speed();
@@ -926,14 +912,14 @@ boolean unlockBox(byte boxNo){
 
   xAxis=xCordinate[boxNo];
   yAxis=yCordinate[boxNo];
-  long positions[2]={(long)xAxis, (long)yAxis};
+  long positions[2]={static_cast<long>(xAxis), static_cast<long>(yAxis)};
   steppers.moveTo(positions);
   while(steppers.run()){
     blink(boxNo, 'g');
   }
 
   zAxis=zCordinate[boxNo];//extend Arm
-  stepperZ.moveTo(zAxis);
+  stepperZ.moveTo(static_cast<long>(zAxis));
   stepperZ.setSpeed(8000);
   while(stepperZ.distanceToGo()!=0){
     stepperZ.runSpeedToPosition();
@@ -941,7 +927,7 @@ boolean unlockBox(byte boxNo){
   }
 
   yAxis=yAxis+5000;//unlock Box
-  stepperY.moveTo(yAxis);
+  stepperY.moveTo(static_cast<long>(yAxis));
   stepperY.setSpeed(3999);
   while(stepperY.distanceToGo()!=0){
     stepperY.runSpeedToPosition();
@@ -949,7 +935,7 @@ boolean unlockBox(byte boxNo){
   }
 
   zAxis=zAxis+7000;//push it out
-  stepperZ.moveTo(zAxis);
+  stepperZ.moveTo(static_cast<long>(zAxis));
   stepperZ.setSpeed(8000);
   while(stepperZ.distanceToGo()!=0){
     stepperZ.runSpeedToPosition();
@@ -958,8 +944,8 @@ boolean unlockBox(byte boxNo){
 
   yAxis=yCordinate[boxNo];
   zAxis=zCordinate[boxNo];
-  stepperY.moveTo(yAxis);
-  stepperZ.moveTo(zAxis);
+  stepperY.moveTo(static_cast<long>(yAxis));
+  stepperZ.moveTo(static_cast<long>(zAxis));
   stepperY.setSpeed(3999);
   stepperZ.setSpeed(3500);
   while((stepperY.distanceToGo()!=0) && (stepperZ.distanceToGo()!=0)){
@@ -971,7 +957,7 @@ boolean unlockBox(byte boxNo){
 
 
   zAxis=0;//Return to position
-  stepperZ.moveTo(zAxis);
+  stepperZ.moveTo(static_cast<long>(zAxis));
   stepperZ.setSpeed(8000);
   while(stepperZ.distanceToGo()!=0)
     stepperZ.runSpeedToPosition();
@@ -980,7 +966,7 @@ boolean unlockBox(byte boxNo){
   stepperY.setSpeed(stepperYSpeed);
   stepperZ.setSpeed(stepperZSpeed);
 
-  return 1;
+  return true;
 }
 
 
@@ -993,14 +979,13 @@ void unlockAllBox(){
 
 
 
-boolean resetPosition(byte axis){
+boolean resetPosition(byte const axis){
   AccelStepper *stepper;
   byte limitSwitch;
   byte enable;
   float speed;
-  float maxSpeed;
+  float maxSpeed= 0;
   char ch;
-
   if(axis==0){
     ch='X';
     stepper=&stepperX;
@@ -1025,7 +1010,7 @@ boolean resetPosition(byte axis){
     speed=stepper->speed();
     stepper->setSpeed(-12000);
   }else
-    return 0;
+    return false;
 
   beepFor(500);
   lcdClear(0);
@@ -1033,11 +1018,11 @@ boolean resetPosition(byte axis){
   lcd.print(String(ch)+" Axis Reset");
   Serial.println("Reset Pos "+ String(ch));
 
-  stepperState(enable, 1);
+  stepperState(enable, true);
   while(digitalRead(limitSwitch)==LOW){
     stepper->runSpeed();
     if(digitalRead(limitSwitch)==HIGH){
-      stepperState(enable, 0);
+      stepperState(enable, false);
     }
   }
 
@@ -1053,23 +1038,23 @@ boolean resetPosition(byte axis){
     zAxis=0;
   }
 
-  stepperState(enable, 1);
+  stepperState(enable, true);
   while(digitalRead(limitSwitch)==HIGH){
     stepper->runSpeed();
     if(digitalRead(limitSwitch)==LOW){
-      stepperState(enable, 0);
+      stepperState(enable, false);
     }
   }
   stepper->setCurrentPosition(0);
   stepper->setSpeed(speed);
-  stepperState(enable, 0);
+  stepperState(enable, false);
   lcdClear(0);
   lcd.setCursor(0,0);
   lcd.print(String(ch)+" Reset Done");
   beepFor(500);
   delay(500);
   beepFor(500);
-  return 0;
+  return true;
 }
 
 
@@ -1081,14 +1066,14 @@ void moveStepper(){
 
   // unsigned long positions[2]={xAxis,yAxis};
 
-  stepperX.moveTo(xAxis);
-  stepperY.moveTo(yAxis);
-  stepperZ.moveTo(zAxis);
+  stepperX.moveTo(static_cast<long>(xAxis));
+  stepperY.moveTo(static_cast<long>(yAxis));
+  stepperZ.moveTo(static_cast<long>(zAxis));
 
   stepperY.setSpeed(stepperY.maxSpeed());
   stepperZ.setSpeed(stepperZ.maxSpeed());
 
-  stepperState(yEnable, 1);
+  stepperState(yEnable, true);
   while(stepperY.distanceToGo()!=0){
     stepperY.runSpeedToPosition();
     if(digitalRead(yLimitSwitch)==HIGH){
@@ -1097,7 +1082,7 @@ void moveStepper(){
     }
   }
 
-  stepperState(xEnable, 1);
+  stepperState(xEnable, true);
   while(stepperX.distanceToGo()!=0){
     stepperX.run();
     if(digitalRead(xLimitSwitch)==HIGH){
@@ -1106,7 +1091,7 @@ void moveStepper(){
     }
   }
 
-  stepperState(zEnable, 1);
+  stepperState(zEnable, true);
   while(stepperZ.distanceToGo()!=0){
     stepperZ.runSpeedToPosition();
     if(digitalRead(zLimitSwitch)==HIGH){
@@ -1114,7 +1099,7 @@ void moveStepper(){
       resetPosition(2);
     }
   }
-  stepperState(zEnable, 0);
+  stepperState(zEnable, false);
 
   // beepFor(500);
   // delay(100);
@@ -1148,49 +1133,35 @@ void bringEmHome(){
 
 
 
-void setColor(byte boxNo, char color){  //color{r=red,g=green,b=blue,c=clear}
+void setColor(const byte boxNo, const char color){  //color{r=red,g=green,b=blue,c=clear}
   int adr=0;
-  int row=boxNo%4;
+  int const row=boxNo%4;
   int col=0;
 
   if(boxNo<8){
     adr=0;
     if(color=='r' || color=='c'){
-      if(boxNo<4)
-        col=0;
-      else
-        col=3;
+      if(boxNo<4) col=0;
+      else        col=3;
     }else if(color=='b'){
-      if(boxNo<4)
-        col=1;
-      else
-        col=4;
+      if(boxNo<4) col=1;
+      else        col=4;
     }else if(color=='g'){
-      if(boxNo<4)
-        col=2;
-      else
-        col=5;
+      if(boxNo<4) col=2;
+      else        col=5;
     }
-
   }else if(boxNo>7){
     adr=1;
     if(color=='r' || color=='c'){
-      if(boxNo<12)
-        col=0;
-      else
-        col=3;
+      if(boxNo<12) col=0;
+      else         col=3;
     }else if(color=='b' ){
-      if(boxNo<12)
-        col=1;
-      else
-        col=4;
+      if(boxNo<12) col=1;
+      else         col=4;
     }else if(color=='g' ){
-      if(boxNo<12)
-        col=2;
-      else
-        col=5;
+      if(boxNo<12) col=2;
+      else         col=5;
     }
-
   }
 
   for(byte j=0;j<6;j++){
@@ -1202,6 +1173,15 @@ void setColor(byte boxNo, char color){  //color{r=red,g=green,b=blue,c=clear}
       boxLed.setLed(adr, row, j, false);
     }
   }
+  // for(byte j=0;j<6;j++){
+  //   if(col>=0 && col<3){
+  //     boxLed.setLed(adr, row, j, false);
+  //     if(j==2) j=6;
+  //   }else if(col>2 && col<6){
+  //     if(j==0) j=3;
+  //     boxLed.setLed(adr, row, j, false);
+  //   }
+  // }
   if(color!='c'){
     boxLed.setLed(adr, row, col, true);
   }
@@ -1229,7 +1209,7 @@ void ledTestFunction(){
 
 
 
-void lcdClear(byte col){
+void lcdClear(byte const col){
   lcd.setCursor(0, col);
   lcd.print("                ");
   lcd.setCursor(0, col);
@@ -1237,7 +1217,7 @@ void lcdClear(byte col){
 
 
 
-bool isOpen(byte boxNo){
+bool isOpen(byte const boxNo){
   if(boxNo<=8){
     digitalWrite(Ya, (HIGH &&((boxNo-1) & 0b000000001)));
     digitalWrite(Yb, (HIGH &&((boxNo-1) & 0b000000010)));
@@ -1260,8 +1240,8 @@ bool isOpen(byte boxNo){
 
 bool checkAllBoxStatus(){
   bool isOpen=false;
-  for(int i=0;i<16;i++){
-    openBoxes[i]=0;
+  for(int & openBoxe : openBoxes){
+    openBoxe=0;
   }
 
   for(byte i=0;i<8;i++){
@@ -1275,25 +1255,25 @@ bool checkAllBoxStatus(){
     delay(70);
 
     if(digitalRead(Y)){
+      isOpen=true;
       Serial.println("BOX "+String(i)+"\n\n");
-      for(int j=0;j<16;j++){
-        if(openBoxes[j]==0){
-          openBoxes[j]=i+1;
+      for(int & openBoxe : openBoxes){
+        if(openBoxe==0){
+          openBoxe=i+1;
           break;
         }
       }
-      isOpen=true;
     }
     if(digitalRead(X)){
+      isOpen=true;
       Serial.println("BOX "+String(i+9)+"\n\n");
-      for(int j=0;j<16;j++){
-        if(openBoxes[j]==0){
-          openBoxes[j]=i+9;
+      for(int & openBoxe : openBoxes){
+        if(openBoxe==0){
+          openBoxe=i+9;
           break;
         }
       }
     }
-    isOpen=true;
   }
   return isOpen;
 }
@@ -1301,7 +1281,6 @@ bool checkAllBoxStatus(){
 
 
 void boxMarker(){
-  byte currentBox=16;
   double steps=1000;
   lcdClear(0);
   unsigned long Xcord[16];
@@ -1314,16 +1293,16 @@ void boxMarker(){
     Zcord[i]=0;
   }
 
+  long currentBox=16;
   bool run=true;
   while(run){
     boolean change=false;
-
     while(Serial.available()){
       String ch=Serial.readStringUntil('\n');
       if(ch.toDouble()==0){
         run=false;
       }else if(ch.toDouble()<=16){
-        currentBox=ch.toDouble();
+        currentBox=ch.toInt();
         lcdClear(0);
         lcd.print("box: "+String(currentBox));
         Serial.println("Loaded Box: "+String(currentBox));
@@ -1376,15 +1355,15 @@ void boxMarker(){
     while(digitalRead(rightButton)==HIGH){
       delay(buttonDelay);
       if(!change)
-        xAxis=xAxis+steps;
+        xAxis=xAxis+static_cast<long>(steps);
       change=true;
     }while(digitalRead(leftButton)==HIGH){
       delay(buttonDelay);
       if(!change){
-        if(xAxis<=steps)
+        if(xAxis<=static_cast<long>(steps))
           xAxis=0;
         else
-          xAxis=xAxis-steps;
+          xAxis= xAxis - static_cast<unsigned long>(steps);
       }
       change=true;
     }
@@ -1393,16 +1372,16 @@ void boxMarker(){
     while(digitalRead(upButton)==HIGH){
       delay(buttonDelay);
       if(!change){
-        yAxis=yAxis+steps;
+        yAxis= yAxis + static_cast<unsigned long>(steps);
       }
       change=true;
     }while(digitalRead(downButton)==HIGH){
       delay(buttonDelay);
       if(!change){
-        if(yAxis<=steps)
+        if(yAxis<=static_cast<long>(steps))
           yAxis=0;
         else
-          yAxis=yAxis-steps;
+          yAxis=yAxis-static_cast<long>(steps);
       }
       change=true;
     }
@@ -1411,15 +1390,15 @@ void boxMarker(){
     while(digitalRead(frontButton)==HIGH){
       delay(buttonDelay);
       if(!change)
-        zAxis=zAxis+steps;
+        zAxis=zAxis+static_cast<long>(steps);
       change=true;
     }while(digitalRead(backButton)==HIGH){
       delay(buttonDelay);
       if(!change){
-        if(zAxis<=steps)
+        if(zAxis<=static_cast<long>(steps))
           zAxis=0;
         else
-          zAxis=zAxis-steps;
+          zAxis=zAxis-static_cast<long>(steps);
       }
       change=true;
     }
