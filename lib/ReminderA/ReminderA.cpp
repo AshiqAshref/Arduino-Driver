@@ -6,7 +6,7 @@ ReminderA::ReminderA(DateTime const * upc_p, unsigned int const * box_no_p,
     upc=*upc_p;
     box_no = *box_no_p;
     id = *id_p;
-    success = success_p;
+    success = *success_p;
 }
 
 ReminderA::ReminderA() {
