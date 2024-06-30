@@ -1,19 +1,10 @@
 #include "Lcd_Menu.h"
+#include <BUTTON_PINS.h>
 
-Lcd_Menu::Lcd_Menu(const byte &enterButton_, const byte &leftButton_,
-  const byte &downButton_, const byte &rightButton_, const byte &upButton_,
-  const byte &frontButton_, const byte &backButton_) {
-
+Lcd_Menu::Lcd_Menu() {
   lcd = new LiquidCrystal_I2C(0x27, 16, 2);
-  enterButton=enterButton_;
-  leftButton=leftButton_;
-  downButton=downButton_;
-  rightButton=rightButton_;
-  upButton=upButton_;
-  frontButton=frontButton_;
-  backButton=backButton_;
-
   initializeLcd();
+  AV_Functions::beepFor(100);
 }
 
 
@@ -23,24 +14,11 @@ LiquidCrystal_I2C &Lcd_Menu::getLcd() const {
 
 
 void Lcd_Menu::initializeLcd()const{
-    lcd->init();
-    lcd->backlight();
-    lcd->clear();
-    lcd->setCursor(2,0);
-    lcd->print("Initialized");
-}
-
-
-void Lcd_Menu::initializePins()const{
-  pinMode(enterButton,INPUT);
-  pinMode(leftButton,INPUT);
-  pinMode(rightButton,INPUT);
-  pinMode(upButton,INPUT);
-  pinMode(downButton,INPUT);
-}
-
-
-void Lcd_Menu::ipMenu(){
+  lcd->init();
+  lcd->backlight();
+  lcd->clear();
+  lcd->setCursor(2,0);
+  lcd->print("Initialized");
   byte ip[8]={
     0b00000,
     0b00000,
@@ -61,138 +39,174 @@ void Lcd_Menu::ipMenu(){
     0b01011,
     0b11011
   };
+  byte arrow[8]={
+    0b00100,
+    0b00100,
+    0b01010,
+    0b01010,
+    0b10001,
+    0b10001,
+    0b00000,
+    0b00000
+  };
+  byte blank[8]={
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000
+  };
 
+  lcd->createChar(0, arrow);
+  lcd->createChar(1, blank);
   lcd->createChar(2, ip);
   lcd->createChar(3, sb);
+}
 
-  boolean idleFlag=true;
-  byte caseInt=0;
-  boolean showIpFlag=false;
-  boolean setIpFlag=false;
-  boolean setSbFlag=false;
-  boolean ipFlag=true;
 
-  boolean enterState=false;
-  boolean upState=false;
-  boolean downState=false;
+void Lcd_Menu::menuPage(){
+  constexpr byte total_menu_items=2;
+  byte menu_item=0;
+  boolean exit=false;
+  boolean menu_item_changed=true;
+  constexpr uint8_t buttons[3] = {
+    static_cast<uint8_t>(BUTTON_PINS::upButton),
+    static_cast<uint8_t>(BUTTON_PINS::downButton),
+    static_cast<uint8_t>(BUTTON_PINS::enterButton)
+  };
+  constexpr uint8_t button_size = sizeof(buttons);
 
-  while(ipFlag==1){
-    constexpr byte totalCase=3;
+  while(!exit){
+    const uint8_t button = checkForInputTest(buttons, button_size);
+    if(button!=0) {
+      if(button==static_cast<uint8_t>(BUTTON_PINS::upButton))  {
+        if(menu_item==0)menu_item= total_menu_items;
+        else menu_item--;
+        menu_item_changed=true;
+      }else if(button==static_cast<uint8_t>(BUTTON_PINS::downButton)) {
+        menu_item++;
+        if(menu_item>total_menu_items) menu_item=0;
+        menu_item_changed=true;
+      }else if(button==static_cast<uint8_t>(BUTTON_PINS::enterButton)) {
+        menu_item_changed=true;
+        if(menu_item == 0) setupPage();
+        else if(menu_item==1) helpPage();
+        else if(menu_item==total_menu_items) exit = true;
+      }
+    }
+
+    if(menu_item_changed){
+      menu_item_changed=false;
+      switch(menu_item){
+        case 0:
+          lcd->clear();
+          lcd->setCursor(5,0);
+          lcd->print(">Setup<");
+          lcd->setCursor(6,1);
+          lcd->print("Help");
+          break;
+
+        case 1:
+          lcd->clear();
+          lcd->setCursor(6,0);
+          lcd->print("Setup");
+          lcd->setCursor(5,1);
+          lcd->print(">Help<");
+          break;
+
+        case 2:
+          lcd->clear();
+          lcd->setCursor(6,0);
+          lcd->print("Help");
+          lcd->setCursor(5,1);
+          lcd->print(">Back<");
+          break;
+
+        default:
+          break;
+      }
+      delay(1);
+    }
+  }
+}
+
+
+void Lcd_Menu::helpPage() {
+  Serial.println();
+}
+
+
+
+
+void Lcd_Menu::changeIpPage(){
+  constexpr byte total_menu_items=3;
+  constexpr uint8_t buttons[] = {
+    static_cast<uint8_t>(BUTTON_PINS::upButton),
+    static_cast<uint8_t>(BUTTON_PINS::downButton),
+    static_cast<uint8_t>(BUTTON_PINS::enterButton)
+  };
+  constexpr uint8_t button_size = sizeof(buttons);
+  byte menu_item=0;
+  boolean menu_item_changed=true;
+  boolean exit=false;
+  while(!exit){
     byte temp_SYS_IP[4];
     byte temp_SYS_SB[4];
-
     for(int i=0;i<4;i++){
       temp_SYS_IP[i]=SYSTEM_IP[i];
       temp_SYS_SB[i]=SYSTEM_SB[i];
     }
 
-    while(digitalRead(upButton))    upState=true;
-    while(digitalRead(downButton))  downState=true;
-    while(digitalRead(enterButton)) enterState=true;
-
-    if(upState==1){
-      if(caseInt<=0){
-        caseInt=totalCase;
-      }else{
-        caseInt--;
+    const uint8_t button = checkForInputTest(buttons, button_size);
+    if(button!=0) {
+      if(button == static_cast<uint8_t>(BUTTON_PINS::upButton)) {
+        if(menu_item==0)menu_item= total_menu_items;
+        else menu_item--;
+        menu_item_changed=true;
+      }else if(button == static_cast<uint8_t>(BUTTON_PINS::downButton)) {
+        menu_item++;
+        if(menu_item>total_menu_items) menu_item=0;
+        menu_item_changed=true;
+      }else if(button==static_cast<uint8_t>(BUTTON_PINS::enterButton)) {
+        menu_item_changed=true;
+        if(menu_item == 0) showIpPage();
+        else if(menu_item==1) setIpPage(temp_SYS_IP);
+        else if(menu_item==2) setSubnetPage(temp_SYS_SB);
+        else if(menu_item==total_menu_items) exit = true;
       }
-
-      idleFlag=true;
-      upState=false;
     }
 
-    if(downState==1){
-      if(caseInt>=totalCase){
-        caseInt=0;
-      }else{
-        caseInt++;
-      }
 
-      idleFlag=true;
-      downState=false;
-    }
-
-    if(enterState==1){
-
-      if(caseInt==totalCase){
-        ipFlag=false;
-        idleFlag=false;
-      }else if(caseInt==0){
-        showIpFlag=true;
-        idleFlag=true;
-      }else if(caseInt==1){
-        setIpFlag=true;
-        idleFlag=true;
-      }else if(caseInt==2){
-        setSbFlag=true;
-        idleFlag=true;
-      }
-      enterState=false;
-    }
-
-    if(idleFlag==1){
-      switch(caseInt){
+    if(menu_item_changed==1){
+      switch(menu_item){
         case 0:
-          while(showIpFlag==1){
-            if(idleFlag==1){
-              lcd->clear();
-              lcd->setCursor(0,0);
-              lcd->write(2);
-              lcd->print(getIp(SYSTEM_IP));
-
-              lcd->setCursor(0,1);
-              lcd->write(3);
-              lcd->print(getIp(SYSTEM_SB));
-
-              idleFlag=false;
-            }
-            while(digitalRead(enterButton))enterState=true;
-            if(enterState==1){
-              enterState=false;
-              showIpFlag=false;
-            }
-          }
           lcd->clear();
           lcd->setCursor(4,0);
           lcd->print(">Show Ip<");
           lcd->setCursor(5,1);
           lcd->print("Set Ip");
-          idleFlag=false;
+          menu_item_changed=false;
           break;
 
         case 1:
-          while(setIpFlag==1){
-            setIp(temp_SYS_IP);
-            if(confirm(temp_SYS_IP)){
-              for(int i=0;i<4;i++)
-                SYSTEM_IP[i]=temp_SYS_IP[i];
-            }
-
-            setIpFlag=false;
-          }
           lcd->clear();
           lcd->setCursor(5,0);
           lcd->print("Show Ip");
           lcd->setCursor(4,1);
           lcd->print(">Set Ip<");
-          idleFlag=false;
+          menu_item_changed=false;
           break;
 
         case 2:
-          while(setSbFlag==1){
-            setIp(temp_SYS_SB);
-            if(confirm(temp_SYS_SB)){
-              for(int i=0;i<4;i++)
-                SYSTEM_SB[i]=temp_SYS_SB[i];
-            }
-            setSbFlag=false;
-          }
           lcd->clear();
           lcd->setCursor(5,0);
           lcd->print("Set Ip");
           lcd->setCursor(2,1);
           lcd->print(">Set Subnet<");
-          idleFlag=false;
+          menu_item_changed=false;
           break;
 
         case 3:
@@ -201,7 +215,7 @@ void Lcd_Menu::ipMenu(){
           lcd->print("Set Subnet");
           lcd->setCursor(5,1);
           lcd->print(">back<");
-          idleFlag=false;
+          menu_item_changed=false;
           break;
 
         default:
@@ -210,177 +224,110 @@ void Lcd_Menu::ipMenu(){
       delay(1);
     }
   }
+}
+
+
+void Lcd_Menu::setSubnetPage(byte * temp_SYS_SB) {
+    setIp(*temp_SYS_SB);
+    if(confirm(temp_SYS_SB)){
+      for(int i=0;i<4;i++)
+        SYSTEM_SB[i]=temp_SYS_SB[i];
+    }
+}
+
+
+uint8_t Lcd_Menu::checkForInputTest(const uint8_t button) {
+  if(digitalRead(button)) {
+    AV_Functions::beepFor(100);
+    Serial.print("GOT THIS: ");
+    Serial.println(button);
+    while(digitalRead(button)){}
+    return button;
+  }return 0;
+}
+
+
+uint8_t Lcd_Menu::checkForInputTest(const uint8_t * buttons, const uint8_t size) {
+  for(uint8_t i=0; i<size; i++) {
+    const uint8_t button = checkForInputTest(buttons[i]);
+    if(button!=0) return button;
+  }return 0;
+}
+
+
+
+void Lcd_Menu::setIpPage(byte * temp_SYS_IP) {
+  setIp(*temp_SYS_IP);
+  if(confirm(temp_SYS_IP)){
+    for(int i=0;i<4;i++)
+      SYSTEM_IP[i]=temp_SYS_IP[i];
+  }
+}
+
+
+void Lcd_Menu::showIpPage() const {
+  constexpr auto button = static_cast<uint8_t>(BUTTON_PINS::enterButton);
+  lcd->clear();
+  lcd->setCursor(0,0);
+  lcd->write(2);
+  lcd->print(getIp(SYSTEM_IP));
+
+  lcd->setCursor(0,1);
+  lcd->write(3);
+  lcd->print(getIp(SYSTEM_SB));
+  while(checkForInputTest(button)!=button){}
 }
 
 
 void Lcd_Menu::setupPage(){
-  boolean idleFlag=true;
-  byte caseInt=0;
-  boolean ipFlag=false;
-  boolean setupFlag=true;
+  constexpr byte total_menu_items=1;
+  constexpr uint8_t buttons[3] = {
+    static_cast<uint8_t>(BUTTON_PINS::upButton),
+    static_cast<uint8_t>(BUTTON_PINS::downButton),
+    static_cast<uint8_t>(BUTTON_PINS::enterButton)
+  };
+  constexpr uint8_t button_size = sizeof(buttons);
 
-  boolean enterState=false;
-  boolean upState=false;
-  boolean downState=false;
-
-  while(setupFlag==1){
-    constexpr byte totalCase=1;
-
-    while(digitalRead(upButton))    upState=true;
-    while(digitalRead(downButton))  downState=true;
-    while(digitalRead(enterButton)) enterState=true;
-
-    if(upState==1){
-      if(caseInt<=0){
-        caseInt=totalCase;
-      }else{
-        caseInt--;
+  boolean menu_item_changed=true;
+  byte menu_item=0;
+  boolean exit=false;
+  while(!exit){
+    const uint8_t button = checkForInputTest(buttons, button_size);
+    if(button!=0) {
+      if(button == static_cast<uint8_t>(BUTTON_PINS::upButton)) {
+        if(menu_item==0)menu_item= total_menu_items;
+        else menu_item--;
+        menu_item_changed=true;
+      }else if(button == static_cast<uint8_t>(BUTTON_PINS::downButton)) {
+        menu_item++;
+        if(menu_item>total_menu_items) menu_item=0;
+        menu_item_changed=true;
+      }else if(button==static_cast<uint8_t>(BUTTON_PINS::enterButton)) {
+        menu_item_changed=true;
+        if(menu_item == 0) changeIpPage();
+        else if(menu_item==total_menu_items) exit = true;
       }
-
-      idleFlag=true;
-      upState=false;
     }
 
-    if(downState==1){
-      if(caseInt>=totalCase){
-        caseInt=0;
-      }else{
-        caseInt++;
-      }
-
-      idleFlag=true;
-      downState=false;
-    }
-
-    if(enterState==1){
-
-      if(caseInt==totalCase){
-        setupFlag=false;
-        idleFlag=false;
-      }else if(caseInt==0){
-        ipFlag=true;
-        idleFlag=true;
-      }
-      enterState=false;
-    }
-
-    if(idleFlag==1){
-      switch(caseInt){
+    if(menu_item_changed==1){
+      switch(menu_item){
         case 0:
-          if(ipFlag==1){
-            ipMenu();
-            ipFlag=false;
-          }
-        lcd->clear();
-        lcd->setCursor(2,0);
-        lcd->print(">Ip address<");
-        lcd->setCursor(6,1);
-        lcd->print("Back");
-
-        idleFlag=false;
-        break;
-
-        case 1:
           lcd->clear();
-        lcd->setCursor(3,0);
-        lcd->print("Ip address");
-        lcd->setCursor(5,1);
-        lcd->print(">Back<");
-        idleFlag=false;
-        break;
-
-        default:
+          lcd->setCursor(2,0);
+          lcd->print(">Ip address<");
+          lcd->setCursor(6,1);
+          lcd->print("Back");
+          menu_item_changed=false;
           break;
-      }
-      delay(1);
-    }
-  }
-}
-
-
-void Lcd_Menu::menuPage(){
-  boolean idleFlag=true;
-  boolean setupFlag=false;
-  byte caseInt=0;
-  boolean menuFlag=true;
-
-  boolean enterState=false;
-  boolean upState=false;
-  boolean downState=false;
-  // boolean mainDisplayFlag=false;
-  while(menuFlag==1){
-    constexpr byte totalCase=2;
-    while(digitalRead(upButton))    upState=true;
-    while(digitalRead(downButton))  downState=true;
-    while(digitalRead(enterButton)) enterState=true;
-
-    if(upState==1){
-      if(caseInt<=0){
-        caseInt=totalCase;
-      }else{
-        caseInt--;
-      }
-
-      idleFlag=true;
-      upState=false;
-    }
-
-    if(downState==1){
-      if(caseInt>=totalCase){
-        caseInt=0;
-      }else{
-        caseInt++;
-      }
-
-      idleFlag=true;
-      downState=false;
-    }
-
-    if(enterState==1){
-      if(caseInt==totalCase){
-        menuFlag=false;
-        // mainDisplayFlag=true;
-      }else if(caseInt==0){
-        setupFlag=true;
-        idleFlag=true;
-      }
-      enterState=false;
-    }
-
-    if(idleFlag==1){
-      switch(caseInt){
-        case 0:
-          if(setupFlag==1){
-            setupPage();
-          }
-
-        lcd->clear();
-        lcd->setCursor(5,0);
-        lcd->print(">Setup<");
-        lcd->setCursor(6,1);
-        lcd->print("Help");
-
-        setupFlag=false;
-        idleFlag=false;
-        break;
 
         case 1:
           lcd->clear();
-        lcd->setCursor(6,0);
-        lcd->print("Setup");
-        lcd->setCursor(5,1);
-        lcd->print(">Help<");
-        idleFlag=false;
-        break;
-
-        case 2:
-          lcd->clear();
-        lcd->setCursor(6,0);
-        lcd->print("Help");
-        lcd->setCursor(5,1);
-        lcd->print(">Back<");
-        idleFlag=false;
-        break;
+          lcd->setCursor(3,0);
+          lcd->print("Ip address");
+          lcd->setCursor(5,1);
+          lcd->print(">Back<");
+          menu_item_changed=false;
+          break;
 
         default:
           break;
@@ -392,43 +339,41 @@ void Lcd_Menu::menuPage(){
 
 
 boolean Lcd_Menu::confirm(const byte *iP) const {
-  boolean rightState=false;
-  boolean leftState=false;
-  boolean enterState=false;
-
-  boolean idleFlag=true;
+  boolean menu_item_changed=true;
   boolean confirmFlag=false;
+  constexpr uint8_t  buttons[] = {
+    static_cast<uint8_t>(BUTTON_PINS::leftButton),
+    static_cast<uint8_t>(BUTTON_PINS::rightButton),
+    static_cast<uint8_t>(BUTTON_PINS::enterButton)
+  };
+  constexpr uint8_t button_size = sizeof(buttons);
   while(true){
-    while(digitalRead(enterButton)) enterState=true;
-    while(digitalRead(leftButton))  leftState=true;
-    while(digitalRead(rightButton)) rightState=true;
-
-    if(leftState){
-      leftState=false;
-      idleFlag=true;
-      confirmFlag = !confirmFlag;
-    }else if(rightState){
-      rightState=false;
-      idleFlag=true;
-      confirmFlag = !confirmFlag;
-    }else if(enterState){
-      return confirmFlag;
+    const uint8_t button = checkForInputTest(buttons, button_size);
+    if(button!=0) {
+      if(button == static_cast<uint8_t>(BUTTON_PINS::leftButton)||
+         button == static_cast<uint8_t>(BUTTON_PINS::rightButton)) {
+        menu_item_changed = true;
+        confirmFlag = !confirmFlag;
+      }else if(button==static_cast<uint8_t>(BUTTON_PINS::enterButton)) {
+        return confirmFlag;
+      }
     }
-    if(idleFlag==1){
+
+    if(menu_item_changed){
       if(!confirmFlag){
         lcd->clear();
         lcd->setCursor(1,0);
         lcd->print(getIp(iP));
         lcd->setCursor(0,1);
         lcd->print("Confirm?  Y >N");
-        idleFlag=false;
+        menu_item_changed=false;
       }else{
         lcd->clear();
         lcd->setCursor(1,0);
         lcd->print(getIp(iP));
         lcd->setCursor(0,1);
         lcd->print("Confirm? >Y  N");
-        idleFlag=false;
+        menu_item_changed=false;
       }
     }
   }
@@ -456,107 +401,72 @@ String Lcd_Menu::getIpBig(const byte *a){
   return temp;
 }
 
-void Lcd_Menu::setIp(byte *temp_SYS_IP) const {
-  byte arrow[8]={
-    0b00100,
-    0b00100,
-    0b01010,
-    0b01010,
-    0b10001,
-    0b10001,
-    0b00000,
-    0b00000
-  };
-  byte blank[8]={
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000,
-    0b00000
-  };
-  lcd->createChar(0, arrow);
-  lcd->createChar(1, blank);
 
+void Lcd_Menu::setIp(byte &temp_SYS_IP) const {
   byte temp_IP[12];
-  smallToBig(temp_SYS_IP,temp_IP);
-  Serial.println(getIpBig(temp_IP));
 
-  boolean runFlag=true;
-  boolean idleFlag=true;
+  smallToBig(&temp_SYS_IP,temp_IP);
+  Serial.println(getIpBig(temp_IP));
+  constexpr uint8_t buttons[] = {
+    static_cast<uint8_t>(BUTTON_PINS::leftButton),
+    static_cast<uint8_t>(BUTTON_PINS::rightButton),
+    static_cast<uint8_t>(BUTTON_PINS::upButton),
+    static_cast<uint8_t>(BUTTON_PINS::downButton),
+    static_cast<uint8_t>(BUTTON_PINS::enterButton)
+  };
+  constexpr uint8_t button_size = sizeof(buttons);
+
+  boolean menu_item_changed=true;
   byte curPos=0;
   unsigned long blinkTime=0;
   boolean currentState=false;
   byte dataPos=0;
+  while(true){
+    const uint8_t button = checkForInputTest(buttons, button_size);
+    if(button!=0) {
+      if(button == static_cast<uint8_t>(BUTTON_PINS::upButton)) {
+        if(temp_IP[dataPos]>=9)temp_IP[dataPos]=0;
+        else temp_IP[dataPos]++;
+        menu_item_changed=true;
+        for(const unsigned char i : temp_IP) {
+          Serial.print(i);
+        }
+        Serial.println();
 
-  boolean enterState=false;
-  boolean upState=false;
-  boolean downState=false;
-  boolean leftState=false;
-  boolean rightState=false;
-
-  while(runFlag==1){
-    while(digitalRead(enterButton)) enterState=true;
-    while(digitalRead(upButton))    upState=true;
-    while(digitalRead(downButton))  downState=true;
-    while(digitalRead(leftButton))    leftState=true;
-    while(digitalRead(rightButton))  rightState=true;
-
-    if(enterState==1){
-      enterState=false;
-      runFlag=false;
-      idleFlag=false;
-    }else if(rightState==1){
-      lcd->setCursor(curPos, 1);
-      lcd->write(1);
-
-      if(curPos>=14){
-        curPos=0;
-        dataPos=0;
-      }else if((curPos+2)%4==0){
-        curPos+=2;
-        dataPos++;
-      }else{
-        curPos++;
-        dataPos++;
+      }else if(button == static_cast<uint8_t>(BUTTON_PINS::downButton)) {
+        if(temp_IP[dataPos]<=0)temp_IP[dataPos]=9;
+        else temp_IP[dataPos]--;
+        menu_item_changed=true;
+      }else if(button == static_cast<uint8_t>(BUTTON_PINS::leftButton)) {
+        lcd->setCursor(curPos, 1);
+        lcd->write(1);
+        if(curPos<=0){
+          curPos=14;
+          dataPos=12;
+        }else if((curPos+4)%4==0){
+          curPos-=2;
+          dataPos--;
+        }else{
+          curPos--;
+          dataPos--;
+        }
+      }else if(button == static_cast<uint8_t>(BUTTON_PINS::rightButton)) {
+        lcd->setCursor(curPos, 1);
+        lcd->write(1);
+        if(curPos>=14){
+          curPos=0;
+          dataPos=0;
+        }else if((curPos+2)%4==0){
+          curPos+=2;
+          dataPos++;
+        }else{
+          curPos++;
+          dataPos++;
+        }
+      }else if(button==static_cast<uint8_t>(BUTTON_PINS::enterButton)) {
+        bigToSmall(&temp_SYS_IP,temp_IP);
+        return;
       }
-
-      rightState=false;
-    }else if(leftState==1){
-      lcd->setCursor(curPos, 1);
-      lcd->write(1);
-
-      if(curPos<=0){
-        curPos=14;
-        dataPos=12;
-      }else if((curPos+4)%4==0){
-        curPos-=2;
-        dataPos--;
-      }else{
-        curPos--;
-        dataPos--;
-      }
-
-      leftState=false;
-    }
-    else if(upState==1){
-      if(temp_IP[dataPos]>=9)
-        temp_IP[dataPos]=0;
-      else
-        temp_IP[dataPos]++;
-
-      idleFlag=true;
-      upState=false;
-    }else if(downState==1){
-      if(temp_IP[dataPos]<=0)
-        temp_IP[dataPos]=9;
-      else
-        temp_IP[dataPos]--;
-
-      idleFlag=true;
-      downState=false;
     }
 
     if(millis()-blinkTime>=500){
@@ -572,7 +482,7 @@ void Lcd_Menu::setIp(byte *temp_SYS_IP) const {
       blinkTime=millis();
     }
 
-    if(idleFlag==1){
+    if(menu_item_changed==1){
       lcd->clear();
       byte cursor=0;
       for(int i=0;i<12;i++){
@@ -581,16 +491,16 @@ void Lcd_Menu::setIp(byte *temp_SYS_IP) const {
           lcd->setCursor(cursor,0);
           lcd->print('.');
         }
-        if(i!=0)
-          cursor++;
+        if(i!=0) cursor++;
         lcd->setCursor(cursor,0);
         lcd->print(String(temp_IP[i]));
       }
-      idleFlag=false;
+      menu_item_changed=false;
     }
+
   }
-  bigToSmall(temp_SYS_IP,temp_IP);
-  Serial.println(getIp(temp_SYS_IP));
+  bigToSmall(&temp_SYS_IP,temp_IP);
+  Serial.println(getIp(&temp_SYS_IP));
 }
 
 
@@ -647,17 +557,17 @@ String Lcd_Menu::ipSort(const String & ip){
         sortedIp+=ip.charAt(k);
         i=k;
       }
-      if(!(i>=14)) sortedIp+='.';
-
+      if(i<14) sortedIp+='.';
     }
   }
   return sortedIp;
 }
 
+
 void Lcd_Menu::lcdClear(byte const col) const {
-  lcd->setCursor(0, col);
-  lcd->print("                ");
-  lcd->setCursor(0, col);
+    lcd->setCursor(0, col);
+    lcd->print("                ");
+    lcd->setCursor(0, col);
 }
 
 

@@ -1,45 +1,37 @@
 #include "Mech_Arm.h"
-#include <MultiStepper.h>
 
-Mech_Arm::Mech_Arm(const byte & X_step_pin, const byte & X_dir_pin, const byte & xEnable_, const byte & xLimitSwitch_,
-             const byte & Y_step_pin, const byte & Y_dir_pin, const byte & yEnable_, const byte & yLimitSwitch_,
-             const byte & Z_step_pin, const byte & Z_dir_pin, const byte & zEnable_, const byte & zLimitSwitch_,
-             const byte & beeper_pin_, Lcd_Menu *lcd_menu_, Led_Indicator * led_indicator_
-        ) {
-    stepperX = new AccelStepper(1, X_step_pin, X_dir_pin);
-    stepperY = new AccelStepper(1, Y_step_pin, Y_dir_pin);
-    stepperZ = new AccelStepper(1, Z_step_pin, Z_dir_pin);
+#include <AV_PINS.h>
+#include <BUTTON_PINS.h>
+#include <MultiStepper.h>
+#include <STEPPER_PINS.h>
+
+
+Mech_Arm::Mech_Arm(Lcd_Menu *lcd_menu_, Led_Indicator * led_indicator_) {
+    stepperX = new AccelStepper(1, static_cast<uint8_t>(STEPPER_PINS::X_step_pin), static_cast<uint8_t>(STEPPER_PINS::X_dir_pin));
+    stepperY = new AccelStepper(1, static_cast<uint8_t>(STEPPER_PINS::Y_step_pin), static_cast<uint8_t>(STEPPER_PINS::Y_dir_pin));
+    stepperZ = new AccelStepper(1, static_cast<uint8_t>(STEPPER_PINS::Z_step_pin), static_cast<uint8_t>(STEPPER_PINS::Z_dir_pin));
+
     lcd_menu = lcd_menu_;
     led_indicator = led_indicator_;
-
-
-    xEnable = xEnable_;
-    yEnable = yEnable_;
-    zEnable = zEnable_;
-    beeper_pin = beeper_pin_;
-
-    xLimitSwitch = xLimitSwitch_;
-    yLimitSwitch = yLimitSwitch_;
-    zLimitSwitch = zLimitSwitch_;
 
     initializeSteppers();
 }
 
 void Mech_Arm::initializeSteppers() const {
-    pinMode(xEnable, OUTPUT);
-    pinMode(yEnable, OUTPUT);
-    pinMode(zEnable, OUTPUT);
-    pinMode(beeper_pin, OUTPUT);
+    pinMode(static_cast<uint8_t>(STEPPER_PINS::xEnable), OUTPUT);
+    pinMode(static_cast<uint8_t>(STEPPER_PINS::yEnable), OUTPUT);
+    pinMode(static_cast<uint8_t>(STEPPER_PINS::zEnable), OUTPUT);
+    pinMode(static_cast<uint8_t>(STEPPER_PINS::zEnable), OUTPUT);
 
-    pinMode(enterButton,INPUT);
-    pinMode(leftButton,INPUT);
-    pinMode(rightButton,INPUT);
-    pinMode(upButton,INPUT);
-    pinMode(downButton,INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::enterButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::leftButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::rightButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::upButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::downButton),INPUT);
 
-    stepperX->setEnablePin(xEnable);
-    stepperY->setEnablePin(yEnable);
-    stepperZ->setEnablePin(zEnable);
+    stepperX->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::xEnable));
+    stepperY->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::yEnable));
+    stepperZ->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::zEnable));
 
     stepperX->setAcceleration(3500);
     stepperY->setAcceleration(1500);
@@ -53,9 +45,9 @@ void Mech_Arm::initializeSteppers() const {
     stepperY->setSpeed(3999);
     stepperZ->setSpeed(8000);
 
-    stepperState(xEnable, false);
-    stepperState(yEnable, false);
-    stepperState(zEnable, false);
+    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), false);
+    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), false);
+    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), false);
 }
 
 
@@ -72,37 +64,33 @@ void Mech_Arm::moveStepper(){
     stepperY->setSpeed(stepperY->maxSpeed());
     stepperZ->setSpeed(stepperZ->maxSpeed());
 
-    stepperState(yEnable, true);
+    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), true);
     while(stepperY->distanceToGo()!=0){
         stepperY->runSpeedToPosition();
-        if(digitalRead(yLimitSwitch)==HIGH){
+        if(digitalRead(static_cast<uint8_t>(STEPPER_PINS::yLimitSwitch))==HIGH){
             Serial.println("EMERGENCY STOP");
             resetPosition(1);
         }
     }
 
-    stepperState(xEnable, true);
+    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), true);
     while(stepperX->distanceToGo()!=0){
         stepperX->run();
-        if(digitalRead(xLimitSwitch)==HIGH){
+        if(digitalRead(static_cast<uint8_t>(STEPPER_PINS::xLimitSwitch))==HIGH){
             Serial.println("EMERGENCY STOP");
             resetPosition(0);
         }
     }
 
-    stepperState(zEnable, true);
+    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), true);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        if(digitalRead(zLimitSwitch)==HIGH){
+        if(digitalRead(static_cast<uint8_t>(STEPPER_PINS::zLimitSwitch))==HIGH){
             Serial.println("EMERGENCY STOP");
             resetPosition(2);
         }
     }
-    stepperState(zEnable, false);
-
-    // beepFor(500);
-    // delay(100);
-    // beepFor(1000);
+    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), false);
 
     Serial.println("[X: "+String(xAxis)+"]");
     Serial.println("[Y: "+String(yAxis)+"]");
@@ -116,7 +104,6 @@ void Mech_Arm::moveStepper(){
 boolean Mech_Arm::unlockBox(byte const boxNo){
     if(boxNo<0 || boxNo>15)
         return false;
-
     const float stepperXSpeed=stepperX->speed();
     const float stepperYSpeed=stepperY->speed();
     const float stepperZSpeed=stepperZ->speed();
@@ -125,9 +112,9 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     steppers.addStepper(*stepperX);
     steppers.addStepper(*stepperY);
 
-    stepperState(xEnable, true);
-    stepperState(yEnable, true);
-    stepperState(zEnable, true);
+    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), true);
+    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), true);
+    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), true);
     lcd_menu->lcdClear(1);
     lcd_menu->getLcd().print("BoxNo: "+String(boxNo));
 
@@ -220,8 +207,8 @@ boolean Mech_Arm::resetPosition(byte const axis){
     if(axis==0){
         ch='X';
         stepper=*stepperX;
-        limitSwitch=xLimitSwitch;
-        enable=xEnable;
+        limitSwitch= static_cast<byte>(STEPPER_PINS::xLimitSwitch);
+        enable= static_cast<byte>(STEPPER_PINS::xEnable);
         speed=stepper.speed();
         maxSpeed=stepper.maxSpeed();
         stepper.setMaxSpeed(5000);
@@ -229,21 +216,21 @@ boolean Mech_Arm::resetPosition(byte const axis){
     }else if(axis==1){
         ch='Y';
         stepper=*stepperY;
-        limitSwitch=yLimitSwitch;
-        enable=yEnable;
+        limitSwitch= static_cast<byte>(STEPPER_PINS::yLimitSwitch);
+        enable= static_cast<byte>(STEPPER_PINS::yEnable);
         speed=stepper.speed();
         stepper.setSpeed(-8000);
     }else if(axis==2){
         ch='Z';
         stepper=*stepperZ;
-        limitSwitch=zLimitSwitch;
-        enable=zEnable;
+        limitSwitch= static_cast<byte>(STEPPER_PINS::zLimitSwitch);
+        enable= static_cast<byte>(STEPPER_PINS::zEnable);
         speed=stepper.speed();
         stepper.setSpeed(-12000);
     }else
         return false;
 
-    beepFor(500);
+    AV_Functions::beepFor(500);
     lcd_menu->lcdClear(0);
     lcd_menu->getLcd().setCursor(0,0);
     lcd_menu->getLcd().print(String(ch)+" Axis Reset");
@@ -282,17 +269,10 @@ boolean Mech_Arm::resetPosition(byte const axis){
     lcd_menu->lcdClear(0);
     lcd_menu->getLcd().setCursor(0,0);
     lcd_menu->getLcd().print(String(ch)+" Reset Done");
-    beepFor(500);
+    AV_Functions::beepFor(500);
     delay(500);
-    beepFor(500);
+    AV_Functions::beepFor(500);
     return true;
-}
-
-
-void Mech_Arm::beepFor(const int time) const{
-    digitalWrite(beeper_pin,HIGH);
-    delay(time);
-    digitalWrite(beeper_pin,LOW);
 }
 
 
@@ -331,7 +311,7 @@ void Mech_Arm::boxMarker(){
     }
 
     bool enterPressed=false;
-    while(digitalRead(enterButton)){
+    while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))){
       enterPressed=true;
     }if(enterPressed){
       Xcord[currentBox-1]=xAxis;
@@ -368,13 +348,13 @@ void Mech_Arm::boxMarker(){
     }
 
 
-    while(digitalRead(rightButton)==HIGH){
-      delay(buttonDelay);
+    while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::rightButton))==HIGH){
+      delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
       if(!change)
         xAxis=xAxis+static_cast<long>(steps);
       change=true;
-    }while(digitalRead(leftButton)==HIGH){
-      delay(buttonDelay);
+    }while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::leftButton))==HIGH){
+      delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
       if(!change){
         if(static_cast<double>(xAxis)<=steps)
           xAxis=0;
@@ -385,14 +365,14 @@ void Mech_Arm::boxMarker(){
     }
 
 
-    while(digitalRead(upButton)==HIGH){
-      delay(buttonDelay);
+    while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::upButton))==HIGH){
+      delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
       if(!change){
         yAxis= yAxis + static_cast<unsigned long>(steps);
       }
       change=true;
-    }while(digitalRead(downButton)==HIGH){
-      delay(buttonDelay);
+    }while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::downButton))==HIGH){
+      delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
       if(!change){
         if(static_cast<double>(yAxis)<=steps)
           yAxis=0;
@@ -403,13 +383,13 @@ void Mech_Arm::boxMarker(){
     }
 
 
-    while(digitalRead(frontButton)==HIGH){
-      delay(buttonDelay);
+    while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::frontButton))==HIGH){
+      delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
       if(!change)
         zAxis=zAxis+static_cast<long>(steps);
       change=true;
-    }while(digitalRead(backButton)==HIGH){
-      delay(buttonDelay);
+    }while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::backButton))==HIGH){
+      delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
       if(!change){
         if(static_cast<double>(zAxis)<=steps)
           zAxis=0;

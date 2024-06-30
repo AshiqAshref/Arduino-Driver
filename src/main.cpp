@@ -1,32 +1,33 @@
-#include <Lcd_Menu.h>
+#include <AV_Functions.h>
 
 #include "Main.h"
-#include <IO_pins_struct.h>
+#include <BUTTON_PINS.h>
+#include <AV_PINS.h>
+
+#include <Wire.h>
+#include <SPI.h>
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
+  // while(!Serial.available()){}
+
+  initializePins();
   led_indicator=new Led_Indicator(dataPin, clkPin, csPin, 2);
-  lcd_menu = new Lcd_Menu(enterButton, leftButton, downButton,
-    rightButton, upButton, frontButton, backButton);
-  mech_arm = new Mech_Arm(X_step_pin,X_dir_pin,xEnable,xLimitSwitch,
-                          Y_step_pin,Y_dir_pin,yEnable,yLimitSwitch,
-                          Z_step_pin,Z_dir_pin,zEnable,zLimitSwitch,
-                          beeper, lcd_menu, led_indicator
-    );
+  lcd_menu = new Lcd_Menu();
+  mech_arm = new Mech_Arm(lcd_menu, led_indicator);
 
-  pinMode(beeper, OUTPUT);
+
   initializeEspCommunicator();
-  // initializeSteppers();
-  // bringEmHome();
 
-  delay(350);
-  beepFor(500);
+  // mech_arm->bringEmHome();
+
+  // AV_Functions::beepFor(500);
 
   Serial.println();
-  led_indicator->ledTestFunction();
-  lcd_menu->lcdClear(0);
+  // led_indicator->ledTestFunction();
+  // lcd_menu->lcdClear(0);
   // lcd.print("Press to Start");
-  // while(!digitalRead(enterButton)) {}
+  // while(!digitalRead(static_cast<uint8_t>(button_pins::enterButton))) {}
   // delay(500);
 
   // unlockAllBox();
@@ -35,21 +36,28 @@ void setup() {
   // unlockBox(14);
 }
 
-
-void beepFor(const int time){
-  digitalWrite(beeper, HIGH);
-  delay(time);
-  digitalWrite(beeper, LOW);
+void loop() {
+  while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))) {
+    while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))){delay(100);}
+    AV_Functions::beepFor(100);
+    lcd_menu->menuPage();
+    lcd_menu->getLcd().clear();
+    lcd_menu->getLcd().print("MAIN PAGE");
+  }
+  // checkEspForRequest();
 }
 
 
-boolean startFlag=false;
-void loop() {
-  while(digitalRead(enterButton)) {
-    lcd_menu->menuPage();
-    break;
-  }
+boolean initializeEspCommunicator(){
+  espPort.begin(9600);
+  delay(50);
+  if(!espPort.isListening())
+    return false;
+  return true;
+}
 
+
+void checkEspForRequest() {
   String identifier="";
   while(espPort.available()){//...............................SOFT_SERIAL
     espPort.readStringUntil('{');
@@ -79,29 +87,6 @@ void loop() {
     }
   }
 
-  //END LOOP
-}
-
-
-void initializeBoxSensor(){
-    pinMode(X, INPUT);
-    pinMode(Xa, OUTPUT);
-    pinMode(Xb, OUTPUT);
-    pinMode(Xc, OUTPUT);
-
-    pinMode(Y, INPUT);
-    pinMode(Ya, OUTPUT);
-    pinMode(Yb, OUTPUT);
-    pinMode(Yc, OUTPUT);
-}
-
-
-boolean initializeEspCommunicator(){
-  espPort.begin(9600);
-  delay(50);
-  if(!espPort.isListening())
-    return false;
-  return true;
 }
 
 
@@ -155,62 +140,14 @@ void blink(byte const boxNo,char const color){
 }
 
 
-bool isOpen(byte const boxNo){
-  if(boxNo<=8){
-    digitalWrite(Ya, (HIGH &&((boxNo-1) & 0b000000001)));
-    digitalWrite(Yb, (HIGH &&((boxNo-1) & 0b000000010)));
-    digitalWrite(Yc, (HIGH &&((boxNo-1) & 0b000000100)));
-    delay(70);
-    if(digitalRead(Y))
-      return true;
-  }else{
-    digitalWrite(Xa, (HIGH &&((boxNo-9) & 0b000000001)));
-    digitalWrite(Xb, (HIGH &&((boxNo-9) & 0b000000010)));
-    digitalWrite(Xc, (HIGH &&((boxNo-9) & 0b000000100)));
-    delay(70);
-    if(digitalRead(X))
-      return true;
-  }
-  return false;
+void initializePins(){
+  pinMode(static_cast<uint8_t>(AV_PINS::beeper), OUTPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::enterButton),INPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::leftButton),INPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::rightButton),INPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::upButton),INPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::downButton),INPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::frontButton),INPUT);
+  pinMode(static_cast<uint8_t>(BUTTON_PINS::backButton),INPUT);
 }
 
-
-bool checkAllBoxStatus(){
-  bool isOpen=false;
-  for(int & openBoxe : openBoxes){
-    openBoxe=0;
-  }
-
-  for(byte i=0;i<8;i++){
-    digitalWrite(Ya, (HIGH &&(i & 0b000000001)));
-    digitalWrite(Yb, (HIGH &&(i & 0b000000010)));
-    digitalWrite(Yc, (HIGH &&(i & 0b000000100)));
-
-    digitalWrite(Xa, (HIGH &&(i & 0b000000001)));
-    digitalWrite(Xb, (HIGH &&(i & 0b000000010)));
-    digitalWrite(Xc, (HIGH &&(i & 0b000000100)));
-    delay(70);
-
-    if(digitalRead(Y)){
-      isOpen=true;
-      Serial.println("BOX "+String(i)+"\n\n");
-      for(int & openBoxe : openBoxes){
-        if(openBoxe==0){
-          openBoxe=i+1;
-          break;
-        }
-      }
-    }
-    if(digitalRead(X)){
-      isOpen=true;
-      Serial.println("BOX "+String(i+9)+"\n\n");
-      for(int & openBoxe : openBoxes){
-        if(openBoxe==0){
-          openBoxe=i+9;
-          break;
-        }
-      }
-    }
-  }
-  return isOpen;
-}
