@@ -1,51 +1,128 @@
 #include <AV_Functions.h>
-
+#include <Lcd_Menu.h>
 #include "Main.h"
 #include <BUTTON_PINS.h>
 #include <AV_PINS.h>
 
-#include <Wire.h>
-#include <SPI.h>
+Mech_Arm * mech_arm;
+static Led_Indicator * led_indicator;
+SoftwareSerial espPort(11, 12); //(Rx, Tx)
+
+// static Lcd_Menu *lcd_menu;
+
+static auto currentA = ReminderA();
+static auto currentB = ReminderB();
+static auto upcommingA= ReminderA();
+static auto upcommingB = ReminderB();
+
+// void setup() {
+//   Serial.begin(9600);
+//   while(!Serial.available()){}
+//
+//   initializePins();
+//   led_indicator=new Led_Indicator(dataPin, clkPin, csPin, 2);
+//   lcd_menu = new Lcd_Menu();
+//   mech_arm = new Mech_Arm(lcd_menu, led_indicator);
+//
+//
+//
+//
+//   initializeEspCommunicator();
+//
+//   // mech_arm->bringEmHome();
+//
+//   // AV_Functions::beepFor(500);
+//
+//   Serial.println();
+//   // led_indicator->ledTestFunction();
+//   // lcd_menu->lcdClear(0);
+//   // lcd.print("Press to Start");
+//   // while(!digitalRead(static_cast<uint8_t>(button_pins::enterButton))) {}
+//   // delay(500);
+//
+//   // unlockAllBox();
+//   // bringEmHome();
+//   // badPosition();
+//   // unlockBox(14);
+// }
 
 void setup() {
-  Serial.begin(9600);
-  // while(!Serial.available()){}
-
   initializePins();
-  led_indicator=new Led_Indicator(dataPin, clkPin, csPin, 2);
-  lcd_menu = new Lcd_Menu();
-  mech_arm = new Mech_Arm(lcd_menu, led_indicator);
-
-
-  initializeEspCommunicator();
-
-  // mech_arm->bringEmHome();
-
-  // AV_Functions::beepFor(500);
-
-  Serial.println();
-  // led_indicator->ledTestFunction();
-  // lcd_menu->lcdClear(0);
-  // lcd.print("Press to Start");
-  // while(!digitalRead(static_cast<uint8_t>(button_pins::enterButton))) {}
-  // delay(500);
-
-  // unlockAllBox();
-  // bringEmHome();
-  // badPosition();
-  // unlockBox(14);
+  Serial.begin(9600);
+  Serial.println("Ready");
+  while(!Serial.available()){}
 }
 
 void loop() {
-  while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))) {
-    while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))){delay(100);}
-    AV_Functions::beepFor(100);
-    lcd_menu->menuPage();
-    lcd_menu->getLcd().clear();
-    lcd_menu->getLcd().print("MAIN PAGE");
+  Serial.println();
+  int i=0;
+  while(true) {
+    Serial.println("adding 1");
+    Box * box = new Box("Element"+static_cast<String>(i),i+1);
+    box->toString();
+    if(!box) {
+      Serial.println("OUT OF MEMMORY!!!!");
+      break;
+    }
+    currentB.add_to_boxes(box);
+    // delay(500);
+    Serial.println("adding 2");
+    box = new Box("Element"+static_cast<String>(i),i+2);
+    box->toString();
+    if(!box) {
+      Serial.println("OUT OF MEMMORY!!!!");
+      break;
+    }
+    currentB.add_to_boxes(box);
+    // delay(500);
+    Serial.println("adding 3");
+    box = new Box("Element"+static_cast<String>(i),i+3);
+    box->toString();
+    if(!box) {
+      Serial.println("\n\n\tOUT OF MEMMORY!!!!\n\n");
+      break;
+    }
+    currentB.add_to_boxes(box);
+    // delay(500);
+    Serial.println();
+    Serial.print("Box Size...........:");
+    Serial.println(currentB.get_boxes_size());
+    // Box * box = currentB.get_boxes();
+
+    for(size_t j=0;j<currentB.get_boxes_size();j++) {
+      currentB.get_a_box(j).toString();
+    }
+    // Serial.println("removing");
+    // for(size_t j=0;j<currentB.get_boxes_size();j++) {
+    //   currentB.remove_a_box(i);
+    // }
+
+    // currentB.get_a_box(1).toString();
+    // currentB.get_a_box(2).toString();
+    // Serial.println("Removing 0");
+    // currentB.remove_a_box(0);
+    // Serial.println("Removing 1");
+    // currentB.remove_a_box(1);
+    // Serial.println("Removing 2");
+    // currentB.remove_a_box(2);
+    i++;
+    Serial.print("IterCount: ");
+    Serial.println(i);
+    delay(500);
   }
-  // checkEspForRequest();
 }
+
+
+// void loop() {
+//   while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))) {
+//     while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))){delay(100);}
+//     AV_Functions::beepFor(100);
+//     lcd_menu->menuPage();
+//     lcd_menu->getLcd().clear();
+//     lcd_menu->getLcd().print("MAIN PAGE");
+//   }
+//   // checkEspForRequest();
+// }
 
 
 boolean initializeEspCommunicator(){
@@ -77,13 +154,13 @@ void checkEspForRequest() {
     }else if(identifier=="ALM0"){//.......................Mode_A
       Serial.print("Alarm0= ");
       String alm=espPort.readStringUntil('}')+'}';
-      current=jsonToClass(alm);
-      Serial.println(current.toString());
+      currentA=jsonToClass(alm);
+      Serial.println(currentA.toString());
     }else if(identifier=="UPC0"){
       Serial.print("Upcomming0= ");
       String upc=espPort.readStringUntil('}')+'}';
-      upcomming=jsonToClass(upc);
-      Serial.println(upcomming.toString());
+      upcommingA=jsonToClass(upc);
+      Serial.println(upcommingA.toString());
     }
   }
 
@@ -94,10 +171,10 @@ ReminderA jsonToClass(String& dat){
   unsigned int id=dat.substring((dat.indexOf(':')+1),dat.indexOf(',')).toInt();
 
   dat=dat.substring(dat.indexOf(',')+1);
-  String date=dat.substring(dat.indexOf(':')+1,dat.indexOf(','));
+  const String date=dat.substring(dat.indexOf(':')+1,dat.indexOf(','));
 
-  byte H=date.substring(1,3).toInt();
-  byte M=date.substring(4,6).toInt();
+  const byte H=date.substring(1,3).toInt();
+  const byte M=date.substring(4,6).toInt();
 
   dat=dat.substring(dat.indexOf(',')+1);
   unsigned int boxNo=dat.substring((dat.indexOf(':')+2),(dat.indexOf(',')-1)).toInt();
@@ -106,13 +183,13 @@ ReminderA jsonToClass(String& dat){
 }
 
 
-ReminderB jsonToClassB(String& dat) {
-  byte H = dat.substring((dat.indexOf('=') + 1), dat.indexOf(':')).toInt();
-  byte M = dat.substring((dat.indexOf(':') + 1), dat.indexOf(',')).toInt();
+ReminderB jsonToClassB(const String& dat) {
+  const byte H = dat.substring((dat.indexOf('=') + 1), dat.indexOf(':')).toInt();
+  const byte M = dat.substring((dat.indexOf(':') + 1), dat.indexOf(',')).toInt();
 
   String boxesString = dat.substring((dat.indexOf(',') + 1));
   boxesString = boxesString.substring(boxesString.indexOf('=') + 1);
-  String success=boxesString.substring(boxesString.indexOf('=')+1, boxesString.length()-1);
+  const String success=boxesString.substring(boxesString.indexOf('=')+1, boxesString.length()-1);
   boxesString = boxesString.substring(0, boxesString.indexOf(']')+1);
 
   boolean suc=false;
