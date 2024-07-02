@@ -4,14 +4,14 @@
 #include <Arduino.h>
 #include <ReminderA.h>
 #include <ReminderB.h>
-#include <Led_Indicator.h>
-#include <Mech_Arm.h>
+// #include <Led_Indicator.h>
+// #include <Mech_Arm.h>
 
 #include <Wire.h>
 #include <SPI.h>
 
-#include <HardwareSerial.h>
-#include <SoftwareSerial.h>
+// #include <HardwareSerial.h>
+// #include <SoftwareSerial.h>
 
 
 
@@ -32,14 +32,14 @@ int openBoxes[16]={};
 // static ReminderB upcommingB;
 
 
-boolean initializeEspCommunicator();
-void initializePins();
-
-ReminderA jsonToClass(String& dat);
-ReminderB jsonToClassB(const String& dat);
-
-void blink(byte boxNo,char color);
-void checkEspForRequest();
+// boolean initializeEspCommunicator();
+// void initializePins();
+//
+// ReminderA jsonToClass(String& dat);
+// ReminderB jsonToClassB(const String& dat);
+//
+// void blink(byte boxNo,char color);
+// void checkEspForRequest();
 
 
 #endif //MAIN_H

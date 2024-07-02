@@ -42,6 +42,7 @@ void Led_Indicator::blink(byte const boxNo,char const color) {
     }
 }
 
+
 void Led_Indicator::setColor(const byte boxNo, const char color)const{  //color{r=red,g=green,b=blue,c=clear}
     int adr=0;
     int const row=boxNo%4;

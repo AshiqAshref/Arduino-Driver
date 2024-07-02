@@ -2,17 +2,38 @@
 
 #include <Box.h>
 
-ReminderB::ReminderB(DateTime const * upc_p, String const * boxes_p, boolean const * success_p) {
+ReminderB::ReminderB(DateTime const * upc_p, boolean const * success_p) {
     upc = *upc_p;
-    boxes = *boxes_p;
     success = *success_p;
     boxes_ = new Box[0];
 }
 ReminderB::ReminderB() {
     upc = DateTime();
-    boxes = "0";
     success = false;
     boxes_ = new Box[0];
+}
+
+
+size_t ReminderB::get_boxes_size_test() {return this->boxes_size_test;}
+
+void ReminderB::add_to_boxes_test(Box *box) {
+    Box **temp_box= new Box*[boxes_size_test+1] ;
+    for(size_t i=0; i<boxes_size_test;i++) {
+        temp_box[i] = boxes_test[i];
+    }
+    temp_box[boxes_size_test]=box;
+    *boxes_test = *temp_box;
+    temp_box = nullptr;
+    boxes_size_test++;
+}
+
+void ReminderB::remove_a_box_test(size_t index) {
+    Box **temp_box =new Box*[boxes_size_test-1];
+    delete []temp_box;
+
+}
+Box* ReminderB::get_a_box_test(size_t index) {
+
 }
 
 
@@ -22,64 +43,55 @@ ReminderB::ReminderB(DateTime const * upc_p, Box (&boxes)[size], boolean const *
     boxes_ = boxes;
     success = *success_p;
 }
+Box *a[] = {new Box()};
 
 void ReminderB::add_to_boxes(const Box *box) {
-    Box *tempBox = new Box[boxes_size+1];
-    // ReSharper disable once CppDFAConstantConditions
-    if(!tempBox){ Serial.println("\n\n\tOUT OF SPACEE IN CLASS\n\n"); return;}
 
-    for(size_t i=0;i<boxes_size;i++) {
-        tempBox[i] = boxes_[i];
-    }
-
-    delete []boxes_;
-    boxes_ = tempBox;
-    tempBox =nullptr;
-    // this->boxes_ = new Box[boxes_size+1];
-    // for(size_t i=0; i<boxes_size; i++) {
-    //     boxes_[i] = * new Box(tempBox[i]);
-    //     delete &tempBox[i];
-    // }
-
-
-    this->boxes_[boxes_size]=*box;
-    boxes_size++;
-
-    // delete[]tempBox;
-
-
-    // memmove(tempBox,boxes_,10);
-    // for(size_t i= 0; i< this->boxes_size; i++)
-    //     tempBox[i]= this->boxes_[i];
-    // tempBox[this->boxes_size] = *box;
+    // Box *temp_array = new Box[boxes_size+1];
+    // // ReSharper disable once CppDFAConstantConditions
+    // if(!temp_array){        Serial.println("\n\n\tOUT OF SPACEE IN CLASS\n\n"); return;}
+    // for(size_t i=0; i<boxes_size; i++)
+    //     temp_array[i] = boxes_[i];
+    // delete []this->boxes_;
+    // this->boxes_ = temp_array;
+    // temp_array = nullptr;
+    //
+    // this->boxes_[boxes_size]=*box;
     // this->boxes_size++;
-    // memcpy(this->boxes_, tempBox, boxes_size);
-    // this->boxes_= tempBox;
 }
-void ReminderB::remove_a_box(const size_t index) {
-    auto new_array = new Box[this->boxes_size-1];
-    for(size_t i =0;i<(this->boxes_size-1);i++) {
-        if(i==index) delete &new_array[i];
-        else new_array[i] = this->boxes_[i];
-    }
-    this->boxes_size--;
-    delete this->boxes_;
-    this->boxes_ = new_array;
+
+void ReminderB::remove_a_box( size_t index) {
+    Box* temp_array = new Box[this->boxes_size-1];
+    if(!temp_array){        Serial.println("\n\n\tOUT OF SPACEE IN CLASS REM\n\n"); return;}
+    size_t temp_array_next = 0;
+    Serial.print("Size..: ");
+    Serial.print(this->boxes_size);
+    for(size_t i=0; i<this->boxes_size; i++)
+        if(i!=index) {
+            temp_array[temp_array_next] = this->boxes_[i];
+            temp_array_next= temp_array_next+1;
+        }else {
+            Serial.print(" Deleting..: ");
+            Serial.println(i);
+            Serial.println();
+        }
+    delete []this->boxes_;
+    this->boxes_ = temp_array;
+    temp_array=nullptr;
+    this->boxes_size = temp_array_next;
 }
 
 
 DateTime & ReminderB::get_upc() {return upc;}
 // String & ReminderB::get_boxes() {return boxes;}
 Box * ReminderB::get_boxes() const {return boxes_;}
-Box ReminderB::get_a_box(const size_t index) const {return boxes_[index];}
+Box &ReminderB::get_a_box(const size_t index) const {return boxes_[index];}
 boolean & ReminderB::get_success() {return success;}
 size_t ReminderB::get_boxes_size() const { return boxes_size;}
 
 void ReminderB::set_upc(DateTime const * upc_p) {upc = *upc_p;}
-void ReminderB::set_boxes(String const * boxes_p) {boxes = *boxes_p;}
 void ReminderB::set_success(boolean const *success_p) {success = *success_p;}
 
-String ReminderB::printArray(){return boxes;}
 String ReminderB::toString() const{
     String time = "";
     if (upc.hour() <= 9) {
@@ -97,7 +109,7 @@ String ReminderB::toString() const{
 
     String a = "{"
                     "\"time\" : "  + time +
-                    ", \"boxes\":"   + boxes +
+                    // ", \"boxes\":"   + boxes +
                     ", \"success\":" + success +
                 "}";
     return a;
