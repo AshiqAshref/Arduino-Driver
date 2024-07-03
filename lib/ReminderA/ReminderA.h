@@ -4,25 +4,24 @@
 #include <RTClib.h>
 
 class ReminderA{
-private:
-    DateTime upc=DateTime(0,0,0);;
-    unsigned int box_no;
-    unsigned int id;
-    boolean success;
+    unsigned int id=0;
+    Box box=Box();
+    DateTime *time=new DateTime(0,0,0);;
+    boolean success=false;
 public:
-    ReminderA(DateTime const * upc_p, unsigned int const  * box_no_p,
-        unsigned int const * id_p, boolean const * success_p);
-    ReminderA();
+    ReminderA(DateTime *time, const Box &box, unsigned int id);
+    ReminderA()=default;
     ~ReminderA()=default;
 
-    DateTime & get_upc();
-    unsigned int & get_box_no();
-    unsigned int & get_id();
-    boolean & get_success();
+    DateTime * get_time() const;
 
-    void set_upc(DateTime const * upc_p);
-    void set_box_no(byte const * box_no_p);
-    void set_id(unsigned int const * id_p);
+    Box &get_box();
+    unsigned int get_id() const;
+    boolean get_success() const;
+
+    void set_id(unsigned int id);
+    void set_box(Box const &box);
+    void set_upc(DateTime *time);
     void set_success(boolean const * success_p);
     String toString()const;
 

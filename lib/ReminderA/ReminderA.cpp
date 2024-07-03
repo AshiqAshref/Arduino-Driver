@@ -1,60 +1,40 @@
+#include <Box.h>
 #include <ReminderA.h>
 
-ReminderA::ReminderA(DateTime const * upc_p, unsigned int const * box_no_p,
-    unsigned int const * id_p, boolean const * success_p)
-{
-    upc=*upc_p;
-    box_no = *box_no_p;
-    id = *id_p;
-    success = *success_p;
+ReminderA::ReminderA(DateTime *time, const Box &box, const unsigned int id){
+    this->id = id;
+    this->box = box;
+    this->time = time;
 }
 
-ReminderA::ReminderA() {
-    upc = DateTime() ;
-    box_no = 0;
-    id = 0;
-    success = false;
-}
+unsigned int ReminderA::get_id() const {return this->id;}
+Box &ReminderA::get_box() {return this->box;}
+DateTime *ReminderA::get_time() const {return this->time;}
+boolean ReminderA::get_success() const {return this->success;}
 
-
-DateTime & ReminderA::get_upc() {return upc;}
-unsigned int & ReminderA::get_box_no() {return box_no;}
-unsigned int & ReminderA::get_id() {return id;}
-boolean & ReminderA::get_success() {return success;}
-
-void ReminderA::set_upc(DateTime const * upc_p) {upc = *upc_p;}
-void ReminderA::set_box_no(byte const * box_no_p) {box_no = *box_no_p;}
-void ReminderA::set_id(unsigned int const * id_p) {this->id = *id_p;}
+void ReminderA::set_id(const unsigned int id) {this->id = id;}
+void ReminderA::set_box(Box const &box) {this->box = box;}
+void ReminderA::set_upc(DateTime *time) {this->time = time;}
 void ReminderA::set_success(boolean const * success_p) {this->success = *success_p;}
 
 String ReminderA::toString()const{
-    String time="\"";
-    String BoxNo="\"";
-    if(upc.hour()<=9){
-        time+='0'+String(upc.hour());
-    }else{
-        time+=String(upc.hour());
-    }
-    time+=':';
-    if(upc.minute()<=9){
-        time+='0'+String(upc.minute());
-    }else{
-        time+=String(upc.minute());
-    }
-    time+="\"";
+    String time_str="\"";
+    if(time->hour()<=9)
+        time_str+='0'+String(time->hour());
+    else
+        time_str+=String(time->hour());
 
-    if(box_no<=9){
-        BoxNo+='0'+String(box_no);
-    }else{
-        BoxNo+=String(box_no);
-    }
-    BoxNo+="\"";
+    time_str+=':';
+    if(time->minute()<=9)
+        time_str+='0'+String(time->minute());
+    else
+        time_str+=String(time->minute());
+    time_str+="\"";
 
     String a="{"
-             R"( 'id';)"     +String(id)+
-             R"(,'date': ")"  +time+"\""+
-             R"(,'boxNo':)"   +BoxNo +
-             R"(,'success':")"+success+"\""
+             R"( "id";)"     +static_cast<String>(id)+
+             R"(,"date": ")"   +time_str+"\""+
+             R"(,"success": )" +success +
         "}";
     return a;
 }

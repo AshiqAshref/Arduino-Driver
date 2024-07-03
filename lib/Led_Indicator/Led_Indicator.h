@@ -4,7 +4,7 @@
 #include <Arduino.h>
 class Led_Indicator {
 private:
-    LedControl * boxLed; //(DIN, CLK, LOAD, no_of_chained_devices)
+    LedControl *boxLed; //(DIN, CLK, LOAD, no_of_chained_devices)
     unsigned long blinkPrevioustime=0;
     bool blinkState=false;
 public:

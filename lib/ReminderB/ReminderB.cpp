@@ -1,116 +1,71 @@
 #include "ReminderB.h"
+#include <Medicine.h>
 
-#include <Box.h>
-
-ReminderB::ReminderB(DateTime const * upc_p, boolean const * success_p) {
-    upc = *upc_p;
-    success = *success_p;
-    boxes_ = new Box[0];
-}
-ReminderB::ReminderB() {
-    upc = DateTime();
-    success = false;
-    boxes_ = new Box[0];
+ReminderB::ReminderB(DateTime *time) {
+    delete this->time;
+    this->time = time;
 }
 
+ReminderB::ReminderB(DateTime *time, Medicine** medicines) {
+    delete time;
+    this->time = time;
+    delete []medicines;
+    this->medicines = medicines;
+}
 
-size_t ReminderB::get_boxes_size_test() {return this->boxes_size_test;}
-
-void ReminderB::add_to_boxes_test(Box *box) {
-    Box **temp_box= new Box*[boxes_size_test+1] ;
-    for(size_t i=0; i<boxes_size_test;i++) {
-        temp_box[i] = boxes_test[i];
+void ReminderB::add_medicine(Medicine *medicine) {
+    auto temp_medicine= new Medicine*[this->medicines_size+1] ;
+    for(byte i=0; i<this->medicines_size;i++) {
+        temp_medicine[i] = this->medicines[i];
     }
-    temp_box[boxes_size_test]=box;
-    *boxes_test = *temp_box;
-    temp_box = nullptr;
-    boxes_size_test++;
+    temp_medicine[this->medicines_size]=medicine;
+    delete []this->medicines;
+    this->medicines = temp_medicine;
+    temp_medicine = nullptr;
+    this->medicines_size++;
 }
-
-void ReminderB::remove_a_box_test(size_t index) {
-    Box **temp_box =new Box*[boxes_size_test-1];
-    delete []temp_box;
-
-}
-Box* ReminderB::get_a_box_test(size_t index) {
-
-}
-
-
-template<size_t size>
-ReminderB::ReminderB(DateTime const * upc_p, Box (&boxes)[size], boolean const * success_p) {
-    upc = *upc_p;
-    boxes_ = boxes;
-    success = *success_p;
-}
-Box *a[] = {new Box()};
-
-void ReminderB::add_to_boxes(const Box *box) {
-
-    // Box *temp_array = new Box[boxes_size+1];
-    // // ReSharper disable once CppDFAConstantConditions
-    // if(!temp_array){        Serial.println("\n\n\tOUT OF SPACEE IN CLASS\n\n"); return;}
-    // for(size_t i=0; i<boxes_size; i++)
-    //     temp_array[i] = boxes_[i];
-    // delete []this->boxes_;
-    // this->boxes_ = temp_array;
-    // temp_array = nullptr;
-    //
-    // this->boxes_[boxes_size]=*box;
-    // this->boxes_size++;
-}
-
-void ReminderB::remove_a_box( size_t index) {
-    Box* temp_array = new Box[this->boxes_size-1];
-    if(!temp_array){        Serial.println("\n\n\tOUT OF SPACEE IN CLASS REM\n\n"); return;}
-    size_t temp_array_next = 0;
-    Serial.print("Size..: ");
-    Serial.print(this->boxes_size);
-    for(size_t i=0; i<this->boxes_size; i++)
-        if(i!=index) {
-            temp_array[temp_array_next] = this->boxes_[i];
-            temp_array_next= temp_array_next+1;
-        }else {
-            Serial.print(" Deleting..: ");
-            Serial.println(i);
-            Serial.println();
-        }
-    delete []this->boxes_;
-    this->boxes_ = temp_array;
-    temp_array=nullptr;
-    this->boxes_size = temp_array_next;
+void ReminderB::remove_medicine(const byte index) {
+    auto temp_medicine = new Medicine*[this->medicines_size-1];
+    byte temp_medicine_next = 0;
+    for(byte i=0; i<this->medicines_size;i++) {
+        if(i==index)
+            delete this->medicines[i];
+        else
+            temp_medicine[temp_medicine_next++] = this->medicines[i];
+    }
+    delete []this->medicines;
+    this->medicines = temp_medicine;
+    temp_medicine = nullptr;
+    this->medicines_size--;
 }
 
 
-DateTime & ReminderB::get_upc() {return upc;}
-// String & ReminderB::get_boxes() {return boxes;}
-Box * ReminderB::get_boxes() const {return boxes_;}
-Box &ReminderB::get_a_box(const size_t index) const {return boxes_[index];}
-boolean & ReminderB::get_success() {return success;}
-size_t ReminderB::get_boxes_size() const { return boxes_size;}
+unsigned int ReminderB::get_time_id() const {return time_id;}
+DateTime *ReminderB::get_time() const {return this->time;}
+Medicine *ReminderB::get_medicine(const byte index) const {return this->medicines[index];}
+byte ReminderB::get_medicine_size() const {return this->medicines_size;}
 
-void ReminderB::set_upc(DateTime const * upc_p) {upc = *upc_p;}
-void ReminderB::set_success(boolean const *success_p) {success = *success_p;}
+void ReminderB::set_time_id(const unsigned int time_id) {this->time_id = time_id;}
+void ReminderB::set_time(DateTime  *time) {
+    delete this->time;
+    this->time = time;
+}
+
 
 String ReminderB::toString() const{
-    String time = "";
-    if (upc.hour() <= 9) {
-        time += '0' + String(upc.hour());
-    } else {
-        time += String(upc.hour());
-    }
-    time += ':';
-    if (upc.minute() <= 9) {
-        time += '0' + String(upc.minute());
-    } else {
-        time += String(upc.minute());
-    }
-    time += "";
+    String time_str = "";
+    if (time->hour() <= 9)
+        time_str += '0' + String(time->hour());
+    else
+        time_str += String(time->hour());
+    time_str += ':';
+    if (time->minute() <= 9)
+        time_str += '0' + String(time->minute());
+    else
+        time_str += String(time->minute());
 
-    String a = "{"
-                    "\"time\" : "  + time +
-                    // ", \"boxes\":"   + boxes +
-                    ", \"success\":" + success +
+    return  "{"
+                    R"("time_id" : )" + static_cast<String>(time_id) +
+                    R"("time" : )" + time_str +
                 "}";
-    return a;
 }

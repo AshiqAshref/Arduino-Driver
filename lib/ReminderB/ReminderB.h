@@ -1,47 +1,32 @@
 #ifndef REMINDERB_H
 #define REMINDERB_H
 #include <Arduino.h>
-#include <Box.h>
+#include <Medicine.h>
 #include <RTClib.h>
 
-
 class ReminderB{
-    DateTime upc{};
-    size_t boxes_size = 0;
-    Box * boxes_;
-    Box **boxes_test = new Box*[];
-    size_t boxes_size_test = 0;
+    unsigned int time_id = 0;
+    DateTime *time= new DateTime();
+    byte medicines_size = 0;
+    Medicine **medicines = new Medicine*[medicines_size];
 
-    boolean success=false;
 public:
-    template<size_t size>
-    ReminderB(DateTime const * upc_p, Box (&boxes)[size], boolean const * success_p);
-    ReminderB(DateTime const * upc_p, boolean const * success_p);
-    ReminderB();
+    explicit ReminderB(DateTime *time);
+    ReminderB(DateTime *time, Medicine** medicines);
+    ReminderB()=default;
     ~ReminderB()=default;
 
-    size_t get_boxes_size_test();
-    void add_to_boxes_test(Box *box);
-    void remove_a_box_test(size_t index);
-    Box* get_a_box_test(size_t index);
+    byte get_medicine_size() const;
+    void add_medicine(Medicine *medicine);
+    void remove_medicine(byte index);
+    Medicine* get_medicine(byte index) const;
 
-    DateTime & get_upc();
-    // String & get_boxes();
-    boolean & get_success();
-    Box &get_a_box(size_t index) const;
+    unsigned int get_time_id() const;
+    DateTime * get_time() const;
 
-    size_t get_boxes_size() const;
-    Box * get_boxes() const;
-
-    void set_upc(DateTime const * upc_p);
-    void set_boxes(String const * boxes_p);
-    void set_success(boolean const * success_p);
-    void add_to_boxes(const Box *box);
-    void remove_a_box(size_t index);
-
-    String printArray();
+    void set_time(DateTime *time);
+    void set_time_id(unsigned int time_id);
     String toString() const;
-
 };
 
 #endif //REMINDERB_H
