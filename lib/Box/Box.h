@@ -5,33 +5,49 @@
 #ifndef BOX_H
 #define BOX_H
 #include <Arduino.h>
+#include <Led_Coordinate.h>
+#include <Pos_Coordinate.h>
 
 class Box {
-    byte box_no=0;
+    const byte box_no;
+    Pos_Coordinate position= Pos_Coordinate();
+    Led_Coordinate led_address=Led_Coordinate();
+
     unsigned int med_id = 0;
     String medicine_name="";
     unsigned short medicine_amount=0;
-    unsigned long position=0;
 public:
-    Box(byte box_no, const String &medicine_name, unsigned short medicine_amount);
-    Box(const String& medicine_name, byte box_no);
-    Box()=default;
-    ~Box()=default;
-
-    byte get_box_no() const;
-    unsigned int get_med_id() const;
-    String get_name();
-    unsigned short get_medicne_amount() const;
-    unsigned long get_position()const;
-
-    void set_box_no(byte box_no);
-    void set_med_id(unsigned int med_id);
-    void set_name(String const &name_p);
-    void set_medicne_amount(unsigned short medicne_amount);
-    void set_position(unsigned long position);
+    Box();
+    explicit Box(const byte box_no, const Pos_Coordinate &pos_coordinate)
+        : box_no(box_no), position(pos_coordinate) {}
 
 
-    String toString() const;
+    void set_box(
+        const unsigned int med_id,
+        const String& medicine_name,
+        const unsigned short medicine_amount
+    ) {
+        this->med_id = med_id;
+        this->medicine_name = medicine_name;
+        this->medicine_amount = medicine_amount;
+    }
+
+
+    byte get_box_no() const {return box_no;}
+    unsigned int get_med_id() const {return this->med_id;}
+    String get_name() {return medicine_name;}
+    unsigned short get_medicne_amount() const {return medicine_amount;}
+
+    void set_med_id(const unsigned int med_id) {this->med_id = med_id;}
+    void set_name(String const& medicine_name) {this->medicine_name = medicine_name;}
+    void set_medicne_amount(unsigned short const medicne_amount) {this->medicine_amount = medicne_amount;}
+    String toString() const{
+        return "{"
+                R"("name" : ")" + medicine_name + "\""
+                R"("box_no" : ")"+ static_cast<String>(box_no) +
+                R"("medicine_amount" : ")"+ static_cast<String>(medicine_amount) +
+                    "}";
+    }
 };
 
 #endif //BOX_H

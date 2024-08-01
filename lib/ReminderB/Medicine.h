@@ -4,22 +4,24 @@
 #include <Box.h>
 
 class Medicine {
-    Box box=Box();
+    Box *box;
     byte dosage=0;
     boolean success=false;
 public:
-    Medicine(const Box &box, byte dosage);
-	Medicine()=default;
+    Medicine(Box *box, const byte dosage)
+        : box(box),
+          dosage(dosage) {
+    }
     ~Medicine()=default;
 
-    Box get_box() const;
-    byte get_dosage() const;
-    boolean  get_success() const;
+    Box *get_box() const {return this->box;}
+    byte get_dosage() const { return this->dosage;}
+    boolean get_success() const {return this->success;}
 
-    void set_box(const Box &box);
-    void set_dosage(byte dosage);
-    void successfull();
-    void unsuccessfull();
+    void set_box(Box *box) {this->box = box;}
+    void set_dosage(const byte dosage) {this->dosage = dosage;}
+    void successfull() {this->success=true;}
+    void unsuccessfull() {this->success=false;}
 
     String toString() const;
 };

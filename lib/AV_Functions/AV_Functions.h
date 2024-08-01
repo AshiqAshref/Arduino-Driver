@@ -9,5 +9,7 @@ public:
     static void beepFor(int time);
     static void beepFor(int delay1, int delay2);
     static void beepFor(int delay1, int delay2, byte repeat);
+    static void waitForInput();
+    static void flush_();
 };
 #endif //AV_FUNCTIONS_H

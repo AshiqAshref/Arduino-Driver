@@ -25,6 +25,20 @@ void AV_Functions::beepFor(const int delay1, const int delay2, const byte repeat
 }
 
 
+ void AV_Functions::waitForInput() {
+    flush_();
+    while(!Serial.available()) {}
+    Serial.flush();
+    while(Serial.available())Serial.read();
+}
+
+
+ void AV_Functions::flush_() {
+    Serial.flush();
+    while(Serial.available())Serial.read();
+}
+
+
 
 
 

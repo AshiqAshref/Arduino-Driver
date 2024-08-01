@@ -9,8 +9,8 @@ class Mech_Arm {
     AccelStepper *stepperX; //(1,step,dir)
     AccelStepper *stepperY;
     AccelStepper *stepperZ;
-    Lcd_Menu lcd_menu;
-    Led_Indicator *led_indicator;
+    // Lcd_Menu lcd_menu;
+    // Led_Indicator *led_indicator;
 
     unsigned long xAxis=0;
     unsigned long yAxis=0;
@@ -38,7 +38,8 @@ class Mech_Arm {
     };
 
 public:
-    Mech_Arm(const Lcd_Menu &lcd_menu, Led_Indicator *led_indicator);
+    // Mech_Arm(const Lcd_Menu &lcd_menu, Led_Indicator *led_indicator);
+    Mech_Arm();
     void initializeSteppers() const;
     static void stepperState(byte enable, boolean state);
     void moveStepper();
@@ -46,6 +47,7 @@ public:
     boolean unlockBox(byte boxNo);
     void unlockAllBox();
     void bringEmHome();
+    void flush_();
     void offsetCoordinate(char cordinate, byte offsetPosition, int offSetBy, boolean applyToAll);
     void boxMarker();
 

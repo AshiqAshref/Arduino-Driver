@@ -1,24 +1,22 @@
 #include "Lcd_Menu.h"
 #include <BUTTON_PINS.h>
 
-Lcd_Menu::Lcd_Menu() {
-  lcd = new LiquidCrystal_I2C(0x27, 16, 2);
-  initializeLcd();
-  AV_Functions::beepFor(100);
-}
+extern LiquidCrystal_I2C lcd;
 
 
-LiquidCrystal_I2C &Lcd_Menu::getLcd() const {
-  return *lcd;
-}
+// LiquidCrystal_I2C &Lcd_Menu::getLcd() {
+//   return lcd;
+// }
 
 
-void Lcd_Menu::initializeLcd()const{
-  lcd->init();
-  lcd->backlight();
-  lcd->clear();
-  lcd->setCursor(2,0);
-  lcd->print("Initialized");
+
+
+void Lcd_Menu::initializeLcd(){
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(2,0);
+  lcd.print("Initialized");
   byte ip[8]={
     0b00000,
     0b00000,
@@ -60,10 +58,11 @@ void Lcd_Menu::initializeLcd()const{
     0b00000
   };
 
-  lcd->createChar(0, arrow);
-  lcd->createChar(1, blank);
-  lcd->createChar(2, ip);
-  lcd->createChar(3, sb);
+  lcd.createChar(0, arrow);
+  lcd.createChar(1, blank);
+  lcd.createChar(2, ip);
+  lcd.createChar(3, sb);
+  AV_Functions::beepFor(100);
 }
 
 
@@ -102,27 +101,27 @@ void Lcd_Menu::menuPage(){
       menu_item_changed=false;
       switch(menu_item){
         case 0:
-          lcd->clear();
-          lcd->setCursor(5,0);
-          lcd->print(">Setup<");
-          lcd->setCursor(6,1);
-          lcd->print("Help");
+          lcd.clear();
+          lcd.setCursor(5,0);
+          lcd.print(">Setup<");
+          lcd.setCursor(6,1);
+          lcd.print("Help");
           break;
 
         case 1:
-          lcd->clear();
-          lcd->setCursor(6,0);
-          lcd->print("Setup");
-          lcd->setCursor(5,1);
-          lcd->print(">Help<");
+          lcd.clear();
+          lcd.setCursor(6,0);
+          lcd.print("Setup");
+          lcd.setCursor(5,1);
+          lcd.print(">Help<");
           break;
 
         case 2:
-          lcd->clear();
-          lcd->setCursor(6,0);
-          lcd->print("Help");
-          lcd->setCursor(5,1);
-          lcd->print(">Back<");
+          lcd.clear();
+          lcd.setCursor(6,0);
+          lcd.print("Help");
+          lcd.setCursor(5,1);
+          lcd.print(">Back<");
           break;
 
         default:
@@ -181,38 +180,38 @@ void Lcd_Menu::changeIpPage(){
     if(menu_item_changed==1){
       switch(menu_item){
         case 0:
-          lcd->clear();
-          lcd->setCursor(4,0);
-          lcd->print(">Show Ip<");
-          lcd->setCursor(5,1);
-          lcd->print("Set Ip");
+          lcd.clear();
+          lcd.setCursor(4,0);
+          lcd.print(">Show Ip<");
+          lcd.setCursor(5,1);
+          lcd.print("Set Ip");
           menu_item_changed=false;
           break;
 
         case 1:
-          lcd->clear();
-          lcd->setCursor(5,0);
-          lcd->print("Show Ip");
-          lcd->setCursor(4,1);
-          lcd->print(">Set Ip<");
+          lcd.clear();
+          lcd.setCursor(5,0);
+          lcd.print("Show Ip");
+          lcd.setCursor(4,1);
+          lcd.print(">Set Ip<");
           menu_item_changed=false;
           break;
 
         case 2:
-          lcd->clear();
-          lcd->setCursor(5,0);
-          lcd->print("Set Ip");
-          lcd->setCursor(2,1);
-          lcd->print(">Set Subnet<");
+          lcd.clear();
+          lcd.setCursor(5,0);
+          lcd.print("Set Ip");
+          lcd.setCursor(2,1);
+          lcd.print(">Set Subnet<");
           menu_item_changed=false;
           break;
 
         case 3:
-          lcd->clear();
-          lcd->setCursor(3,0);
-          lcd->print("Set Subnet");
-          lcd->setCursor(5,1);
-          lcd->print(">back<");
+          lcd.clear();
+          lcd.setCursor(3,0);
+          lcd.print("Set Subnet");
+          lcd.setCursor(5,1);
+          lcd.print(">back<");
           menu_item_changed=false;
           break;
 
@@ -265,14 +264,14 @@ void Lcd_Menu::setIpPage(byte * temp_SYS_IP) {
 
 void Lcd_Menu::showIpPage() const {
   constexpr auto button = static_cast<uint8_t>(BUTTON_PINS::enterButton);
-  lcd->clear();
-  lcd->setCursor(0,0);
-  lcd->write(2);
-  lcd->print(getIp(SYSTEM_IP));
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.write(2);
+  lcd.print(getIp(SYSTEM_IP));
 
-  lcd->setCursor(0,1);
-  lcd->write(3);
-  lcd->print(getIp(SYSTEM_SB));
+  lcd.setCursor(0,1);
+  lcd.write(3);
+  lcd.print(getIp(SYSTEM_SB));
   while(checkForInputTest(button)!=button){}
 }
 
@@ -310,20 +309,20 @@ void Lcd_Menu::setupPage(){
     if(menu_item_changed==1){
       switch(menu_item){
         case 0:
-          lcd->clear();
-          lcd->setCursor(2,0);
-          lcd->print(">Ip address<");
-          lcd->setCursor(6,1);
-          lcd->print("Back");
+          lcd.clear();
+          lcd.setCursor(2,0);
+          lcd.print(">Ip address<");
+          lcd.setCursor(6,1);
+          lcd.print("Back");
           menu_item_changed=false;
           break;
 
         case 1:
-          lcd->clear();
-          lcd->setCursor(3,0);
-          lcd->print("Ip address");
-          lcd->setCursor(5,1);
-          lcd->print(">Back<");
+          lcd.clear();
+          lcd.setCursor(3,0);
+          lcd.print("Ip address");
+          lcd.setCursor(5,1);
+          lcd.print(">Back<");
           menu_item_changed=false;
           break;
 
@@ -336,7 +335,7 @@ void Lcd_Menu::setupPage(){
 }
 
 
-boolean Lcd_Menu::confirm(const byte *iP) const {
+boolean Lcd_Menu::confirm(const byte *iP)  {
   boolean menu_item_changed=true;
   boolean confirmFlag=false;
   constexpr uint8_t  buttons[] = {
@@ -359,18 +358,18 @@ boolean Lcd_Menu::confirm(const byte *iP) const {
 
     if(menu_item_changed){
       if(!confirmFlag){
-        lcd->clear();
-        lcd->setCursor(1,0);
-        lcd->print(getIp(iP));
-        lcd->setCursor(0,1);
-        lcd->print("Confirm?  Y >N");
+        lcd.clear();
+        lcd.setCursor(1,0);
+        lcd.print(getIp(iP));
+        lcd.setCursor(0,1);
+        lcd.print("Confirm?  Y >N");
         menu_item_changed=false;
       }else{
-        lcd->clear();
-        lcd->setCursor(1,0);
-        lcd->print(getIp(iP));
-        lcd->setCursor(0,1);
-        lcd->print("Confirm? >Y  N");
+        lcd.clear();
+        lcd.setCursor(1,0);
+        lcd.print(getIp(iP));
+        lcd.setCursor(0,1);
+        lcd.print("Confirm? >Y  N");
         menu_item_changed=false;
       }
     }
@@ -400,7 +399,7 @@ String Lcd_Menu::getIpBig(const byte *a){
 }
 
 
-void Lcd_Menu::setIp(byte &temp_SYS_IP) const {
+void Lcd_Menu::setIp(byte &temp_SYS_IP)  {
   byte temp_IP[12];
 
   smallToBig(&temp_SYS_IP,temp_IP);
@@ -436,8 +435,8 @@ void Lcd_Menu::setIp(byte &temp_SYS_IP) const {
         else temp_IP[dataPos]--;
         menu_item_changed=true;
       }else if(button == static_cast<uint8_t>(BUTTON_PINS::leftButton)) {
-        lcd->setCursor(curPos, 1);
-        lcd->write(1);
+        lcd.setCursor(curPos, 1);
+        lcd.write(1);
         if(curPos<=0){
           curPos=14;
           dataPos=12;
@@ -449,8 +448,8 @@ void Lcd_Menu::setIp(byte &temp_SYS_IP) const {
           dataPos--;
         }
       }else if(button == static_cast<uint8_t>(BUTTON_PINS::rightButton)) {
-        lcd->setCursor(curPos, 1);
-        lcd->write(1);
+        lcd.setCursor(curPos, 1);
+        lcd.write(1);
         if(curPos>=14){
           curPos=0;
           dataPos=0;
@@ -470,28 +469,28 @@ void Lcd_Menu::setIp(byte &temp_SYS_IP) const {
     if(millis()-blinkTime>=500){
       if(currentState==0){
         currentState=true;
-        lcd->setCursor(curPos, 1);
-        lcd->write(0);
+        lcd.setCursor(curPos, 1);
+        lcd.write(0);
       }else{
         currentState=false;
-        lcd->setCursor(curPos, 1);
-        lcd->write(1);
+        lcd.setCursor(curPos, 1);
+        lcd.write(1);
       }
       blinkTime=millis();
     }
 
     if(menu_item_changed==1){
-      lcd->clear();
+      lcd.clear();
       byte cursor=0;
       for(int i=0;i<12;i++){
         if(i>0 && i%3==0){
           cursor++;
-          lcd->setCursor(cursor,0);
-          lcd->print('.');
+          lcd.setCursor(cursor,0);
+          lcd.print('.');
         }
         if(i!=0) cursor++;
-        lcd->setCursor(cursor,0);
-        lcd->print(String(temp_IP[i]));
+        lcd.setCursor(cursor,0);
+        lcd.print(String(temp_IP[i]));
       }
       menu_item_changed=false;
     }
@@ -562,10 +561,10 @@ String Lcd_Menu::ipSort(const String & ip){
 }
 
 
-void Lcd_Menu::lcdClear(byte const col) const {
-    lcd->setCursor(0, col);
-    lcd->print("                ");
-    lcd->setCursor(0, col);
+void Lcd_Menu::lcdClear(byte const col)  {
+    lcd.setCursor(0, col);
+    lcd.print("                ");
+    lcd.setCursor(0, col);
 }
 
 
