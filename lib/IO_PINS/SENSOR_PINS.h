@@ -1,7 +1,7 @@
 
 #ifndef SENSOR_PINS_H
 #define SENSOR_PINS_H
-enum class SENSOR_PINS {
+enum class SENSOR_PINS:uint8_t {
     X=40,
     Xa=34,
     Xb=35,

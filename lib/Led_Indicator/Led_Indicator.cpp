@@ -17,30 +17,73 @@ void Led_Indicator::ledTestFunction(const unsigned int delay_){
     for(byte color = 0;color<3;color++){
         for(byte i=1;i<=16;i++){
             if(color==0)
-                setColor(i,'g');
+                setColor(i,COLOR::GREEN);
             else if(color==1)
-                setColor(i,'b');
+                setColor(i,COLOR::BLUE);
             else if(color==2)
-                setColor(i,'r');
+                setColor(i,COLOR::RED);
             delay(delay_);
         }
     }
 }
 
 
-void Led_Indicator::blink(byte const boxNo,char const color) {
+void Led_Indicator::blink(byte const boxNo, const COLOR color) {
     if((millis()-blinkPrevioustime)>500){
         blinkPrevioustime=millis();
         if(blinkState)
             setColor(boxNo, color);
         else
-            setColor(boxNo, 'c');
+            setColor(boxNo, COLOR::CLEAR);
         blinkState=!blinkState;
     }
 }
 
 
-void Led_Indicator::setColor(byte boxNo, const char color){  //color{r=red,g=green,b=blue,c=clear}
+void Led_Indicator::setColor(byte boxNo, const COLOR *color) {
+    int adr=0;
+    boxNo--;
+    int const row=boxNo%4;
+    int col=0;
+    for(int i=0;i<2;i++) {
+        if(boxNo<=7){
+            adr=0;
+            if(color[i] == COLOR::RED || color[i]==COLOR::CLEAR){
+                if(boxNo<=3) col=0;
+                else        col=3;
+            }else if(color[i]==COLOR::BLUE){
+                if(boxNo<=3) col=1;
+                else        col=4;
+            }else if(color[i]==COLOR::GREEN){
+                if(boxNo<=3) col=2;
+                else        col=5;
+            }
+        }else if(boxNo>7){
+            adr=1;
+            if(color[i]==COLOR::RED || color[i]==COLOR::CLEAR){
+                if(boxNo<12) col=0;
+                else         col=3;
+            }else if(color[i]==COLOR::BLUE ){
+                if(boxNo<12) col=1;
+                else         col=4;
+            }else if(color[i]==COLOR::GREEN ){
+                if(boxNo<12) col=2;
+                else         col=5;
+            }
+        }
+
+        if(i==0){
+            if(col<3) for(byte j=0;j<3;j++)
+                boxLed.setLed(adr, row, j, false);
+            else for(byte j=3;j<6;j++)
+                boxLed.setLed(adr, row, j, false);
+        }
+        if(color[i]!=COLOR::CLEAR) boxLed.setLed(adr, row, col, true);
+    }
+}
+
+
+void Led_Indicator::setColor(byte boxNo, const COLOR color){  //color{r=red,g=green,b=blue,c=clear}
     int adr=0;
     boxNo--;
     int const row=boxNo%4;
@@ -48,25 +91,25 @@ void Led_Indicator::setColor(byte boxNo, const char color){  //color{r=red,g=gre
 
     if(boxNo<=7){
         adr=0;
-        if(color=='r' || color=='c'){
+        if(color==COLOR::RED || color==COLOR::CLEAR){
             if(boxNo<=3) col=0;
             else        col=3;
-        }else if(color=='b'){
+        }else if(color==COLOR::BLUE){
             if(boxNo<=3) col=1;
             else        col=4;
-        }else if(color=='g'){
+        }else if(color==COLOR::GREEN){
             if(boxNo<=3) col=2;
             else        col=5;
         }
     }else if(boxNo>7){
         adr=1;
-        if(color=='r' || color=='c'){
+        if(color==COLOR::RED || color==COLOR::CLEAR){
             if(boxNo<12) col=0;
             else         col=3;
-        }else if(color=='b' ){
+        }else if(color==COLOR::BLUE ){
             if(boxNo<12) col=1;
             else         col=4;
-        }else if(color=='g' ){
+        }else if(color==COLOR::GREEN ){
             if(boxNo<12) col=2;
             else         col=5;
         }
@@ -77,5 +120,5 @@ void Led_Indicator::setColor(byte boxNo, const char color){  //color{r=red,g=gre
     else for(byte j=3;j<6;j++)
             boxLed.setLed(adr, row, j, false);
 
-    if(color!='c') boxLed.setLed(adr, row, col, true);
+    if(color!=COLOR::CLEAR) boxLed.setLed(adr, row, col, true);
 }

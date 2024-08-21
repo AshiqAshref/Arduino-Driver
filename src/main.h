@@ -27,38 +27,26 @@ unsigned long zCordinate[16]={
     1500, 1600, 1800, 1900
 };
 
+byte STAT_LED_PIN = 52;
 
 
-static Box boxes[16] = {
-    Box(1 , Pos_Coordinate(xCordinate[0] ,yCordinate[0] , zCordinate[0])) ,
-    Box(2 , Pos_Coordinate(xCordinate[1] ,yCordinate[1] , zCordinate[1])) ,
-    Box(3 , Pos_Coordinate(xCordinate[2] ,yCordinate[2] , zCordinate[2])) ,
-    Box(4 , Pos_Coordinate(xCordinate[3] ,yCordinate[3] , zCordinate[3])) ,
-    Box(5 , Pos_Coordinate(xCordinate[4] ,yCordinate[4] , zCordinate[4])) ,
-    Box(6 , Pos_Coordinate(xCordinate[5] ,yCordinate[5] , zCordinate[5])) ,
-    Box(7 , Pos_Coordinate(xCordinate[6] ,yCordinate[6] , zCordinate[6])) ,
-    Box(8 , Pos_Coordinate(xCordinate[7] ,yCordinate[7] , zCordinate[7])) ,
-    Box(9 , Pos_Coordinate(xCordinate[8] ,yCordinate[8] , zCordinate[8])) ,
-    Box(10, Pos_Coordinate(xCordinate[9] ,yCordinate[9] , zCordinate[9])) ,
-    Box(11, Pos_Coordinate(xCordinate[10],yCordinate[10], zCordinate[10])),
-    Box(12, Pos_Coordinate(xCordinate[11],yCordinate[11], zCordinate[11])),
-    Box(13, Pos_Coordinate(xCordinate[12],yCordinate[12], zCordinate[12])),
-    Box(14, Pos_Coordinate(xCordinate[13],yCordinate[13], zCordinate[13])),
-    Box(15, Pos_Coordinate(xCordinate[14],yCordinate[14], zCordinate[14])),
-    Box(16, Pos_Coordinate(xCordinate[15],yCordinate[15], zCordinate[15]))
-};
+
+
 // boolean initializeEspCommunicator();
 void initializePins();
-//
+
+void addBoxes();
+String get_formated_Time(byte mode = 24);
+String beautifyTime(uint8_t h_m_s);
+
+
+
+
 // ReminderA jsonToClass(String& dat);
 // ReminderB jsonToClassB(const String& dat);
 //
 
 // void checkEspForRequest();
 // void initializeBoxes();
-
-void addBoxes();
-void addReminders();
-
-String beautifyTime(uint8_t h_m_s);
+// void addReminders();
 #endif //MAIN_H

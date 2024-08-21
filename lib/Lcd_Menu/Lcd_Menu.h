@@ -1,9 +1,9 @@
 #ifndef LCD_MENU_H
 #define LCD_MENU_H
-#include <LiquidCrystal_I2C.h>
 #include <Arduino.h>
-// #include <Lcd_Menu.h>
+#include <LiquidCrystal_I2C.h>
 #include <AV_Functions.h>
+
 
 class Lcd_Menu {
     byte SYSTEM_IP[4]={ 192,168,4,28 };
@@ -11,9 +11,8 @@ class Lcd_Menu {
 // protected:
     // LiquidCrystal_I2C *lcd; //(addr, row, col)
      // LiquidCrystal_I2C lcd; //(addr, row, col)
-    // LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 16, 2);
 public:
-    explicit Lcd_Menu()=default;
+    Lcd_Menu()=default;
     // explicit Lcd_Menu(LiquidCrystal_I2C &lcd)
     //     : lcd(lcd) {
     //     AV_Functions::beepFor(100);

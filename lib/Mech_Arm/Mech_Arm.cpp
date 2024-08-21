@@ -130,21 +130,21 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     long positions[2]={static_cast<long>(xAxis), static_cast<long>(yAxis)};
     steppers.moveTo(positions);
     while(steppers.run()){
-        led_indicator.blink(boxNo, 'g');
+        led_indicator.blink(boxNo, COLOR::GREEN);
     }
     zAxis=zCordinate[boxNo];//extend Arm
     stepperZ->moveTo(static_cast<long>(zAxis));
     stepperZ->setSpeed(zSpeed);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, 'g');
+        led_indicator.blink(boxNo, COLOR::GREEN);
     }
     yAxis=yAxis+5000;//unlock Box
     stepperY->moveTo(static_cast<long>(yAxis));
     stepperY->setSpeed(ySpeed);
     while(stepperY->distanceToGo()!=0){
         stepperY->runSpeedToPosition();
-        led_indicator.blink(boxNo, 'g');
+        led_indicator.blink(boxNo, COLOR::GREEN);
     }
 
     zAxis=zAxis+7000;//push it out
@@ -152,7 +152,7 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     stepperZ->setSpeed(zSpeed);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, 'g');
+        led_indicator.blink(boxNo, COLOR::GREEN);
     }
 
     yAxis=yCordinate[boxNo];
@@ -164,9 +164,9 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     while((stepperY->distanceToGo()!=0) && (stepperZ->distanceToGo()!=0)){
         stepperY->runSpeedToPosition();
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, 'g');
+        led_indicator.blink(boxNo, COLOR::GREEN);
     }
-    led_indicator.setColor(boxNo, 'b');
+    led_indicator.setColor(boxNo, COLOR::BLUE);
 
     zAxis=0;//Return to position
     stepperZ->moveTo(static_cast<long>(zAxis));
@@ -299,7 +299,7 @@ void Mech_Arm::boxMarker(){
     bool run=true;
     while(run){
         boolean change=false;
-        led_indicator.blink(currentBox,'r');
+        led_indicator.blink(currentBox,COLOR::RED);
         while(Serial.available()) {
             String ch=Serial.readStringUntil('\n');
             if(ch.charAt(0)=='N') {
@@ -358,7 +358,7 @@ void Mech_Arm::boxMarker(){
                 }
                 Serial.println("\n Speed Set to : "+static_cast<String>(enteredSpeed.toDouble()));
             }else if(ch.toDouble()<=16 && ch.toDouble()>=1){
-                led_indicator.setColor(currentBox,'b');
+                led_indicator.setColor(currentBox,COLOR::BLUE);
                 currentBox=ch.toInt();
                 lcd_menu.lcdClear(0);
                 lcd.print("box: "+static_cast<String>(currentBox));
@@ -378,9 +378,9 @@ void Mech_Arm::boxMarker(){
             Xcord[currentBox-1]=xAxis;
             Ycord[currentBox-1]=yAxis;
             Zcord[currentBox-1]=zAxis;
-            if(!zAxis<=1000){ zAxis=zAxis-1000; change = true;}
+            if(zAxis>1000){ zAxis=zAxis-1000; change = true;}
 
-            led_indicator.setColor(currentBox,'g');
+            led_indicator.setColor(currentBox,COLOR::GREEN);
             currentBox=currentBox-1;
             if(currentBox<=1) currentBox=16;
             lcd_menu.lcdClear(0);

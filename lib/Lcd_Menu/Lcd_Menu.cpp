@@ -1,15 +1,10 @@
 #include "Lcd_Menu.h"
+
+
 #include <BUTTON_PINS.h>
+#include <LiquidCrystal_I2C.h>
 
 extern LiquidCrystal_I2C lcd;
-
-
-// LiquidCrystal_I2C &Lcd_Menu::getLcd() {
-//   return lcd;
-// }
-
-
-
 
 void Lcd_Menu::initializeLcd(){
   lcd.init();

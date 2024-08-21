@@ -31,7 +31,7 @@ String ReminderA::toString()const{
     time_str+="\"";
 
     String a="{"
-             R"( "id";)"     +static_cast<String>(id)+
+             R"( "id":)"     +static_cast<String>(id)+
              R"(,"date": ")"   +time_str+"\""+
              R"(,"success": )" +success +
         "}";

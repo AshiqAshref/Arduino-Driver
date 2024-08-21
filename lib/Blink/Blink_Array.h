@@ -2,6 +2,7 @@
 #define BLINK_ARRAY_H
 #include <Blink.h>
 
+
 class Blink_Array {
     byte blink_size_ = 0;
     Blink **blinks = new Blink*[blink_size_];
@@ -9,8 +10,9 @@ public:
     Blink_Array() = default;
     ~Blink_Array() = default;
 
-    void add(byte box_no, char color);
     void add(Blink *blink);
+    void add(byte box_no, COLOR color);
+    void add(byte box_no, const COLOR *color);
     void remove_by_index(byte index);
     void remove_by_boxNo(byte box_no);
 

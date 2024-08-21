@@ -1,6 +1,15 @@
 #include "Blink_Array.h"
 
-void Blink_Array::add(const byte box_no, const char color) {
+
+void Blink_Array::add(const byte box_no, const COLOR color) {
+    const int result = find_index_by_box_no(box_no);
+    if(result>=0)
+        blinks[result]->set_color(color);
+    else
+        add(new Blink(box_no, color));
+}
+
+void Blink_Array::add(const byte box_no, const COLOR *color) {
     const int result = find_index_by_box_no(box_no);
     if(result>=0)
         blinks[result]->set_color(color);
@@ -10,7 +19,7 @@ void Blink_Array::add(const byte box_no, const char color) {
 
 void Blink_Array::add(Blink *blink) {
     auto temp_blink = new Blink*[this->blink_size_+1];
-    for(byte i =0;i<this->blink_size_;i++)
+    for(byte i=0;i<this->blink_size_;i++)
         temp_blink[i] = this->blinks[i];
     temp_blink[this->blink_size_]= blink;
     delete []this->blinks;

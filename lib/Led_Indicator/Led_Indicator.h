@@ -3,6 +3,7 @@
 #include <LedControl.h>
 #include <Arduino.h>
 #include <LED_ARRAY_PINS.h>
+#include <COLOR.h>
 
 class Led_Indicator {
     LedControl boxLed = LedControl(
@@ -15,9 +16,10 @@ class Led_Indicator {
     bool blinkState=false;
 public:
     Led_Indicator();
-    void setColor(byte boxNo, char color);
     void initializeLed();
     void ledTestFunction(unsigned int delay_);
-    void blink(byte boxNo,char color);
+    void blink(byte boxNo, COLOR color);
+    void setColor(byte boxNo, const COLOR *color);
+    void setColor(byte boxNo, COLOR color);
 };
 #endif //LED_INDICATOR_UNIT_H

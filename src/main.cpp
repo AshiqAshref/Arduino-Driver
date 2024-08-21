@@ -2,10 +2,12 @@
 #include "Main.h"
 #include <Led_indicator.h>
 #include <Mech_Arm.h>
+#include <COLOR.h>
+
 // #include <Led_Coordinate.h>
-#include <RTClib.h>
 #include <SoftwareSerial.h>
-#include <Blink.h>
+
+
 
 // #include <ReminderA.h>
 // #include <ReminderB.h>
@@ -13,119 +15,100 @@
 #include <AV_PINS.h>
 #include <ArduinoJson.h>
 #include <LiquidCrystal_I2C.h>
-// #include <TimeLib.h>
 #include <Blink_Array.h>
 #include <Lcd_Menu.h>
+#include <sensor_unit.h>
+#include <Status_Directive.h>
+#include <RTClib.h>
+#include <Communication_protocols.h>
+
 // #include <AV_Functions.h>
 
 // static auto reminderA = ReminderA();
 // static auto reminderB = ReminderB();
+byte box_size = 16;
+Box boxes[16] = {
+    Box(1 , Pos_Coordinate(xCordinate[0] ,yCordinate[0] , zCordinate[0])) ,
+    Box(2 , Pos_Coordinate(xCordinate[1] ,yCordinate[1] , zCordinate[1])) ,
+    Box(3 , Pos_Coordinate(xCordinate[2] ,yCordinate[2] , zCordinate[2])) ,
+    Box(4 , Pos_Coordinate(xCordinate[3] ,yCordinate[3] , zCordinate[3])) ,
+    Box(5 , Pos_Coordinate(xCordinate[4] ,yCordinate[4] , zCordinate[4])) ,
+    Box(6 , Pos_Coordinate(xCordinate[5] ,yCordinate[5] , zCordinate[5])) ,
+    Box(7 , Pos_Coordinate(xCordinate[6] ,yCordinate[6] , zCordinate[6])) ,
+    Box(8 , Pos_Coordinate(xCordinate[7] ,yCordinate[7] , zCordinate[7])) ,
+    Box(9 , Pos_Coordinate(xCordinate[8] ,yCordinate[8] , zCordinate[8])) ,
+    Box(10, Pos_Coordinate(xCordinate[9] ,yCordinate[9] , zCordinate[9])) ,
+    Box(11, Pos_Coordinate(xCordinate[10],yCordinate[10], zCordinate[10])),
+    Box(12, Pos_Coordinate(xCordinate[11],yCordinate[11], zCordinate[11])),
+    Box(13, Pos_Coordinate(xCordinate[12],yCordinate[12], zCordinate[12])),
+    Box(14, Pos_Coordinate(xCordinate[13],yCordinate[13], zCordinate[13])),
+    Box(15, Pos_Coordinate(xCordinate[14],yCordinate[14], zCordinate[14])),
+    Box(16, Pos_Coordinate(xCordinate[15],yCordinate[15], zCordinate[15]))
+};
+
+
 
 SoftwareSerial espPort(11, 12); //(Rx, Tx)
 RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+extern Lcd_Menu lcd_menu;
 auto led_indicator = Led_Indicator();
 auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
-extern Lcd_Menu lcd_menu;
+auto sensor_unit = Sensor_unit();
+auto comms = Communication_protocols();
 //y=1/2
 //x=1/4
 //z=1/2
 
 
-
 void setup() {
+    pinMode(STAT_LED_PIN,OUTPUT);
+    digitalWrite(STAT_LED_PIN,HIGH);
     initializePins();
-    // led_indicator.ledTestFunction(500);
-    for(int i=1;i<=16;i++)
-        led_indicator.setColor(i,'b');
-    led_indicator.setColor(4,'g');
-    led_indicator.setColor(7,'g');
-    led_indicator.setColor(13,'g');
-
     lcd_menu.initializeLcd();
     rtc.begin();
     Serial.begin(9600);
     espPort.begin(9600);
     Serial.println("Ready");
+    // led_indicator.ledTestFunction(100);
+    for(auto &box : boxes)
+        box.set_status(DEFAULT_);
 
+}
 
-    // mech_arm.bringEmHome();
-    // mech_arm.boxMarker();
-    // while(!Serial.available()){}
-    // while(Serial.available()){char c = Serial.read();}
-    // mech_arm.unlockBox(1);
-    // while(!Serial.available()){}
-    // while(Serial.available()){char c = Serial.read();}
-    // mech_arm.unlockBox(16);
-    // while(!Serial.available()){}
-    // while(Serial.available()){char c = Serial.read();}
-    // mech_arm.unlockBox(13);
-    // while(!Serial.available()){}
-    // while(Serial.available()){char c = Serial.read();}
-
-    blink_array.add(1,'r');
-    blink_array.add(11,'r');
-    blink_array.add(6,'r');
-    blink_array.add(16,'r');
-
-
-
-    unsigned long prevTime=millis();
-    while(!Serial.available()) {
-        if (millis()-prevTime>1000) {
-            prevTime=millis();
-            lcd.setCursor(4,1);
-            lcd.print(beautifyTime(rtc.now().hour())+":"
-                +beautifyTime(rtc.now().minute())+":"
-                +beautifyTime(rtc.now().second())
-                );
-        }
-        blink_array.blinkAll();
+unsigned long prevTime=millis();
+void loop() {
+    if (millis()-prevTime>1000) {
+        prevTime=millis();
+        lcd.setCursor(4,1);
+        lcd.print(get_formated_Time(12));
+        Sensor_unit::check_if_any_box_open();
     }
-    Serial.println("Starting");
+    blink_array.blinkAll();
+    comms.handle_communications();
 }
 
 
-uint8_t last_second;
-void loop() {
-    if(rtc.now().second()!=last_second) {
-        last_second = rtc.now().second();
-        lcd.setCursor(4,1);
-        lcd.print(beautifyTime(rtc.now().hour())+":"
-            +beautifyTime(rtc.now().minute())+":"
-            +beautifyTime(rtc.now().second())
-            );
-    }
-
-    while (espPort.available()) {
-        while (espPort.available())
-            Serial.print(static_cast<char>(espPort.read()));
-        Serial.println();
-        espPort.flush();
-        AV_Functions::beepFor(100);
-    }
-    // JsonDocument doc;
-    // while(espPort.available()) {
-    //     DeserializationError error = deserializeJson(doc, espPort);
-    //     if(error) Serial.println(error.f_str());
-    //     // else serializeJson(doc, Serial);
-    //     serializeJson(doc, Serial);
-    //
-    //     Serial.println("Caught One!\n\n");
-    //     espPort.flush();
-    //     AV_Functions::beepFor(100);
-    // }
-    delay(10000);
+String get_formated_Time(const byte mode) {
+    const DateTime curr_time = rtc.now();
+    if(mode == 12)
+        return
+            beautifyTime(curr_time.twelveHour())+":"
+            +beautifyTime(curr_time.minute())+":"
+            +beautifyTime(curr_time.second())+" "
+            +(curr_time.isPM()? "p": " ");
+    return
+        beautifyTime(rtc.now().hour())+":"
+        +beautifyTime(rtc.now().minute()) +":"
+        +beautifyTime(rtc.now().second());
 }
 
 String beautifyTime(const uint8_t h_m_s) {
-    if(h_m_s<9)
+    if(h_m_s<10)
         return '0'+static_cast<String>(h_m_s);
     return static_cast<String>(h_m_s);
 }
-
-
 
 // void addBoxes() {
 //     String json = R"(
@@ -215,6 +198,18 @@ String beautifyTime(const uint8_t h_m_s) {
 //     lcd_menu.getLcd().print("MAIN PAGE");
 //   }
 //   // checkEspForRequest();
+// JsonDocument doc;
+// while(espPort.available()) {
+//     DeserializationError error = deserializeJson(doc, espPort);
+//     if(error) Serial.println(error.f_str());
+//     // else serializeJson(doc, Serial);
+//     serializeJson(doc, Serial);
+//
+//     Serial.println("Caught One!\n\n");
+//     espPort.flush();
+//     AV_Functions::beepFor(100);
+// }
+// delay(10000);
 // }
 
 //
@@ -351,62 +346,62 @@ void initializePins(){
   pinMode(static_cast<uint8_t>(BUTTON_PINS::backButton),INPUT);
 }
 
-void addRemindes() {
-    String json =R"(
-    [
-        {
-            "timeId": 24,
-            "time": "00:10",
-            "medicines": [
-                {
-                    "medBox": 9,
-                    "dosage": 1,
-                    "success": false
-                }
-            ]
-        },
-        {
-            "timeId": 6,
-            "time": "00:20",
-            "medicines": [
-                {
-                    "medBox": 14,
-                    "dosage": 2,
-                    "success": false
-                },
-                {
-                    "medBox": 9,
-                    "dosage": 3,
-                    "success": false
-                }
-            ]
-        },
-        {
-            "timeId": 4,
-            "time": "10:05",
-            "medicines": [
-                {
-                    "medBox": 7,
-                    "dosage": 3,
-                    "success": false
-                }
-            ]
-        },
-        {
-            "timeId": 3,
-            "time": "20:45",
-            "medicines": [
-                {
-                    "medBox": 7,
-                    "dosage": 2,
-                    "success": false
-                },
-                {
-                    "medBox": 14,
-                    "dosage": 4,
-                    "success": false
-                }
-            ]
-        }
-    ])";
-}
+// void addRemindes() {
+//     String json =R"(
+//     [
+//         {
+//             "timeId": 24,
+//             "time": "00:10",
+//             "medicines": [
+//                 {
+//                     "medBox": 9,
+//                     "dosage": 1,
+//                     "success": false
+//                 }
+//             ]
+//         },
+//         {
+//             "timeId": 6,
+//             "time": "00:20",
+//             "medicines": [
+//                 {
+//                     "medBox": 14,
+//                     "dosage": 2,
+//                     "success": false
+//                 },
+//                 {
+//                     "medBox": 9,
+//                     "dosage": 3,
+//                     "success": false
+//                 }
+//             ]
+//         },
+//         {
+//             "timeId": 4,
+//             "time": "10:05",
+//             "medicines": [
+//                 {
+//                     "medBox": 7,
+//                     "dosage": 3,
+//                     "success": false
+//                 }
+//             ]
+//         },
+//         {
+//             "timeId": 3,
+//             "time": "20:45",
+//             "medicines": [
+//                 {
+//                     "medBox": 7,
+//                     "dosage": 2,
+//                     "success": false
+//                 },
+//                 {
+//                     "medBox": 14,
+//                     "dosage": 4,
+//                     "success": false
+//                 }
+//             ]
+//         }
+//     ])";
+// }
