@@ -5,10 +5,14 @@
 #include <Led_Indicator.h>
 #include <Lcd_Menu.h>
 
+
+
+
 class Mech_Arm {
-    AccelStepper *stepperX; //(1,step,dir)
-    AccelStepper *stepperY;
-    AccelStepper *stepperZ;
+    //(1,step,dir)
+    AccelStepper *stepperX; //x=1/4 step
+    AccelStepper *stepperY; //y=1/2 step
+    AccelStepper *stepperZ; //z=1/2 step
     // Lcd_Menu lcd_menu;
     // Led_Indicator *led_indicator;
 

@@ -1,7 +1,7 @@
 #ifndef COMMUNICATION_PROTOCOLS_H
 #define COMMUNICATION_PROTOCOLS_H
 #include <Arduino.h>
-#include <SoftwareSerial.h>
+
 
 enum COMM_PROTOCOL:byte {
     SYN =             0b10000000,
@@ -18,19 +18,20 @@ enum COMM_PROTOCOL:byte {
 class Communication_protocols {
     const unsigned long time_out_ = 10000;
     const unsigned long retry_interval_onSucc_= 3600000;
-    // const unsigned long retry_interval_onFail_= 30000;
     const unsigned long retry_interval_onFail_= 30000;
-    unsigned long NTP_refresh_rate_ = retry_interval_onFail_;
+    unsigned long NTP_refresh_rate_ = 0;
+    unsigned long get_next_time_ = 0;
     const byte funct_id_getTime_ =   0b00001000;
+    const byte funct_id_get_next_reminderB_ = 0b00001100;
     const byte function_id_filter_ = 0b00001111;
 
     static byte getProtocol(byte b);
     byte getFunction_id(byte response_header) const;
     COMM_PROTOCOL get_response(byte function_id) const;
     COMM_PROTOCOL send_response_SYN_ACK(byte function_id) const;
+    static void send_request_SYN(byte function_id);
     static void send_response_ACK(byte function_id);
     static void send_request_RETRY(byte function_id);
-    static void send_request_SYN(byte function_id);
     static void send_status_SUCCESS(byte function_id);
     static void send_status_TIMEOUT(byte function_id);
     static void send_header(byte function_id,  byte protocol_id);
@@ -38,8 +39,8 @@ class Communication_protocols {
 
     static void clear_receive_buffer();
     bool getTimeFromBuffer();
-    void handleResponse();
-    void handleRequest();
+    // void handleResponse();
+    // void handleRequest();
     void handle_header(byte response_header) ;
     bool NTP_response_handler() ;
     bool wait_for_response() const;
@@ -47,7 +48,6 @@ class Communication_protocols {
 
 public:
     bool status_led_state_ = false;
-
     Communication_protocols()=default;
     void handle_communications() ;
     void invert_stat_led();
@@ -60,8 +60,8 @@ public:
     static void printlnBin(byte aByte);
 
     static COMM_PROTOCOL byte_to_enum(byte protocol_id);
-    byte get_time() const {return funct_id_getTime_;}
-
+    void get_time() const;
+    void get_next_reminder_B(unsigned long epoch) const;
 
 };
 

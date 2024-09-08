@@ -5,23 +5,31 @@
 #include "Communication_protocols.h"
 #include <RTClib.h>
 #include <CRC.h>
-
-extern SoftwareSerial espPort;
-extern RTC_DS1307 rtc;
-
+extern RTC_DS3231 rtc;
 
 unsigned long time_since_last_NTP_update=0;
 void Communication_protocols::handle_communications() {
-    if(espPort.available()){
-        const byte response_header = espPort.read();
+    if(Serial1.available()){
+        const byte response_header = Serial1.read();
         clear_receive_buffer();
         handle_header(response_header);
     }
     if(millis()-time_since_last_NTP_update>NTP_refresh_rate_) {
-        send_request_SYN(get_time());
+        get_time();
         NTP_success(false);
     }
 }
+
+void Communication_protocols::get_time() const {
+    send_request_SYN(funct_id_getTime_);
+}
+
+void Communication_protocols::get_next_reminder_B(const unsigned long epoch) const {
+    get_next_time_ = epoch;
+    send_request_SYN(funct_id_get_next_reminderB_);
+}
+
+
 
 void Communication_protocols::handle_header(const byte response_header)  {
     if(getFunction_id(response_header)==funct_id_getTime_) {
@@ -40,7 +48,6 @@ void Communication_protocols::handle_header(const byte response_header)  {
 }
 
 
-
 //throws TIMEOUT, SUCCESS, RETRY, ACK
 bool Communication_protocols::NTP_response_handler()  {
     constexpr byte max_retries =40;
@@ -57,7 +64,7 @@ bool Communication_protocols::NTP_response_handler()  {
             send_status_TIMEOUT(funct_id_getTime_);
             return false;
         }
-        if(espPort.available()) {
+        if(Serial1.available()) {
             if(getTimeFromBuffer()) {
                 send_status_SUCCESS(funct_id_getTime_);
                 return true;
@@ -75,15 +82,17 @@ bool Communication_protocols::NTP_response_handler()  {
 bool Communication_protocols::getTimeFromBuffer() {
     byte tim[4]{};
     for(int i=0;i<4;i++) {
-        tim[i]=espPort.read();
+        tim[i]=Serial1.read();
         printBin(tim[i]);
         Serial.print(" ");
     }
     Serial.println();
 
-    const byte crc_val = espPort.read();
+    const byte crc_val = Serial1.read();
     if(calcCRC8(tim, 4)==crc_val) {
         invert_stat_led();
+        Serial.print("Time : ");
+        Serial.println(bytesToLong(tim));
         rtc.adjust(DateTime(bytesToLong(tim)));
         return true;
     }
@@ -94,8 +103,8 @@ bool Communication_protocols::getTimeFromBuffer() {
 COMM_PROTOCOL Communication_protocols::get_response(const byte function_id) const {
     if(!wait_for_response())
         return TIMEOUT;
-    while(espPort.available()) {
-        const byte response_header = espPort.read();
+    while(Serial1.available()) {
+        const byte response_header = Serial1.read();
         if(getFunction_id(response_header)==function_id) {
             if(getProtocol(response_header)==ACK) {
                 return ACK;
@@ -111,7 +120,6 @@ COMM_PROTOCOL Communication_protocols::get_response(const byte function_id) cons
     clear_receive_buffer();
     return UNKW_ERR;
 }
-
 
 
 void Communication_protocols::NTP_success(const bool success) {
@@ -131,7 +139,7 @@ void Communication_protocols::invert_stat_led() {
 
 bool Communication_protocols::wait_for_response() const {
     const unsigned long time_out_start = millis();
-    while(!espPort.available())
+    while(!Serial1.available())
         if(millis()-time_out_start>=time_out_)
             return false;
     return true;
@@ -167,7 +175,8 @@ void Communication_protocols::send_request_SYN(const byte function_id) {
     send_header(function_id , SYN);
 }
 void Communication_protocols::send_request_RETRY(const byte function_id) {
-    send_header(function_id , RETRY);
+    send_header(function_id ,
+        RETRY);
 }
 void Communication_protocols::send_status_SUCCESS(const byte function_id) {
     send_header(function_id , SUCCESS);
@@ -207,10 +216,10 @@ void Communication_protocols::send_header(const byte function_id, const byte pro
     clear_receive_buffer();
     Serial.print("sending: ");
     printlnProtocol(byte_to_enum(protocol_id));
-    espPort.write((function_id | protocol_id));
+    Serial1.write((function_id | protocol_id));
 }
 void Communication_protocols::clear_receive_buffer() {
-    while(espPort.available()>0)espPort.read();
+    while(Serial1.available()>0)Serial1.read();
 }
 
 
@@ -224,12 +233,11 @@ byte *Communication_protocols::longToByte(const unsigned long long_) {
     return a_arr;
 }
 unsigned long Communication_protocols::bytesToLong(const byte *byte_) {
-    const unsigned int a =
+    return
         (static_cast<long>(byte_[0])<<24) |
         (static_cast<long>(byte_[1])<<16) |
         (static_cast<long>(byte_[2])<<8)  |
         (static_cast<long>(byte_[3]));
-    return a;
 }
 
 void Communication_protocols::printlnProtocol(const COMM_PROTOCOL res_code) {

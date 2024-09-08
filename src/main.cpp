@@ -5,12 +5,7 @@
 #include <COLOR.h>
 
 // #include <Led_Coordinate.h>
-#include <SoftwareSerial.h>
-
-
-
-// #include <ReminderA.h>
-// #include <ReminderB.h>
+// #include <SoftwareSerial.h>
 #include <BUTTON_PINS.h>
 #include <AV_PINS.h>
 #include <ArduinoJson.h>
@@ -24,8 +19,6 @@
 
 // #include <AV_Functions.h>
 
-// static auto reminderA = ReminderA();
-// static auto reminderB = ReminderB();
 byte box_size = 16;
 Box boxes[16] = {
     Box(1 , Pos_Coordinate(xCordinate[0] ,yCordinate[0] , zCordinate[0])) ,
@@ -46,9 +39,6 @@ Box boxes[16] = {
     Box(16, Pos_Coordinate(xCordinate[15],yCordinate[15], zCordinate[15]))
 };
 
-
-
-SoftwareSerial espPort(11, 12); //(Rx, Tx)
 RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 extern Lcd_Menu lcd_menu;
@@ -57,9 +47,7 @@ auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
 auto comms = Communication_protocols();
-//y=1/2
-//x=1/4
-//z=1/2
+
 
 
 void setup() {
@@ -67,17 +55,17 @@ void setup() {
     digitalWrite(STAT_LED_PIN,HIGH);
     initializePins();
     lcd_menu.initializeLcd();
-    rtc.begin();
+
     Serial.begin(9600);
-    espPort.begin(9600);
-    Serial.println("Ready");
+    Serial1.begin(115200);
+    rtc.begin();
     // led_indicator.ledTestFunction(100);
     for(auto &box : boxes)
         box.set_status(DEFAULT_);
 
 }
 
-unsigned long prevTime=millis();
+unsigned long prevTime=0;
 void loop() {
     if (millis()-prevTime>1000) {
         prevTime=millis();
@@ -92,6 +80,7 @@ void loop() {
 
 String get_formated_Time(const byte mode) {
     const DateTime curr_time = rtc.now();
+    // Serial.println(curr_time.unixtime());
     if(mode == 12)
         return
             beautifyTime(curr_time.twelveHour())+":"
@@ -336,14 +325,15 @@ String beautifyTime(const uint8_t h_m_s) {
 // }
 
 void initializePins(){
-  pinMode(static_cast<uint8_t>(AV_PINS::beeper), OUTPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::enterButton),INPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::leftButton),INPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::rightButton),INPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::upButton),INPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::downButton),INPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::frontButton),INPUT);
-  pinMode(static_cast<uint8_t>(BUTTON_PINS::backButton),INPUT);
+    pinMode(static_cast<uint8_t>(AV_PINS::beeper), OUTPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::enterButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::leftButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::rightButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::upButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::downButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::frontButton),INPUT);
+    pinMode(static_cast<uint8_t>(BUTTON_PINS::backButton),INPUT);
+    digitalWrite(static_cast<uint8_t>(AV_PINS::beeper),HIGH);
 }
 
 // void addRemindes() {

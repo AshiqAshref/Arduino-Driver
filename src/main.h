@@ -29,18 +29,12 @@ unsigned long zCordinate[16]={
 
 byte STAT_LED_PIN = 52;
 
-
-
-
 // boolean initializeEspCommunicator();
 void initializePins();
 
 void addBoxes();
 String get_formated_Time(byte mode = 24);
 String beautifyTime(uint8_t h_m_s);
-
-
-
 
 // ReminderA jsonToClass(String& dat);
 // ReminderB jsonToClassB(const String& dat);
