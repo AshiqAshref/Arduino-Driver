@@ -16,6 +16,7 @@
 #include <Status_Directive.h>
 #include <RTClib.h>
 #include <Communication_protocols.h>
+#include <ReminderB.h>
 
 // #include <AV_Functions.h>
 
@@ -47,6 +48,7 @@ auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
 auto comms = Communication_protocols();
+ReminderB *upcommingReminderB=nullptr;
 
 
 
@@ -66,6 +68,8 @@ void setup() {
 }
 
 unsigned long prevTime=0;
+unsigned long prevTime_since_reminder_request=0;
+
 void loop() {
     if (millis()-prevTime>1000) {
         prevTime=millis();
@@ -73,10 +77,20 @@ void loop() {
         lcd.print(get_formated_Time(12));
         Sensor_unit::check_if_any_box_open();
     }
+    if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB) {
+        comms.get_next_reminder_B(get_current_plain_unix_time());
+    }
+
     blink_array.blinkAll();
     comms.handle_communications();
 }
 
+unsigned long get_current_plain_unix_time() {
+    const DateTime curr_time = rtc.now();
+    const auto temp = DateTime(0,0,0,curr_time.hour(),curr_time.minute(),curr_time.second());
+    return temp.unixtime();
+
+}
 
 String get_formated_Time(const byte mode) {
     const DateTime curr_time = rtc.now();
@@ -279,11 +293,6 @@ String beautifyTime(const uint8_t h_m_s) {
 //   return {new DateTime(0, 0, 0, H, M, 0), &boxesString, &suc};
 // }
 
-
-//
-
-//
-//
 
 // void setup() {
 //   Serial.begin(9600);

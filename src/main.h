@@ -36,6 +36,9 @@ void addBoxes();
 String get_formated_Time(byte mode = 24);
 String beautifyTime(uint8_t h_m_s);
 
+unsigned long get_current_plain_unix_time();
+
+
 // ReminderA jsonToClass(String& dat);
 // ReminderB jsonToClassB(const String& dat);
 //

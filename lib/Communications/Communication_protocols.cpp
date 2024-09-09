@@ -5,7 +5,10 @@
 #include "Communication_protocols.h"
 #include <RTClib.h>
 #include <CRC.h>
+#include <ReminderB.h>
+#include <ArduinoJson.h>
 extern RTC_DS3231 rtc;
+
 
 unsigned long time_since_last_NTP_update=0;
 void Communication_protocols::handle_communications() {
@@ -24,7 +27,7 @@ void Communication_protocols::get_time() const {
     send_request_SYN(funct_id_getTime_);
 }
 
-void Communication_protocols::get_next_reminder_B(const unsigned long epoch) const {
+void Communication_protocols::get_next_reminder_B(const unsigned long epoch) {
     get_next_time_ = epoch;
     send_request_SYN(funct_id_get_next_reminderB_);
 }
@@ -42,9 +45,92 @@ void Communication_protocols::handle_header(const byte response_header)  {
         }else {
             clear_receive_buffer();
         }
+    }else  if(getFunction_id(response_header)==funct_id_get_next_reminderB_) {
+        if(getProtocol(response_header)==SYN_ACK) {
+            Serial.println("Got SYN_ACK");
+            get_reminder_b_response_handler();
+        }else if(getProtocol(response_header)==FIN) {
+            Serial.println("protocolFIN");
+            NTP_success(false);
+        }else {
+            clear_receive_buffer();
+        }
     }else {
         clear_receive_buffer();
     }
+}
+
+
+//throws TIMEOUT, SUCCESS, RETRY, ACK
+bool Communication_protocols::get_reminder_b_response_handler()  {
+    send_response_ACK(funct_id_get_next_reminderB_);
+    sendLong(get_next_time_);
+    if(!wait_for_response()) {
+        send_status_TIMEOUT(funct_id_getTime_);
+        return false;
+    }
+
+    unsigned long time_out_start = millis();
+    constexpr byte max_retries =40;
+    byte retry_count=0;
+    while(retry_count<max_retries) {
+        if(millis()-time_out_start>=time_out_) {
+            send_status_TIMEOUT(funct_id_getTime_);
+            return false;
+        }
+        if(Serial1.available()) {
+            byte res = Serial.read();
+            if(getFunction_id(res)==funct_id_get_next_reminderB_ && getProtocol(res)==TCP) {
+                const byte total_sequence_number = Serial1.read();
+                receive_reminderB_from_buffer(total_sequence_number);
+            }
+            if(getTimeFromBuffer()) {
+                send_status_SUCCESS(funct_id_getTime_);
+                return true;
+            }
+            send_request_RETRY(funct_id_getTime_);
+            time_out_start= millis();
+            retry_count++;
+        }
+    }
+    send_status_TIMEOUT(funct_id_getTime_);
+    return false;
+}
+
+void Communication_protocols::send_tcp_ack(const byte function_id, byte recived_squence) {
+    send_header(function_id , SYN_ACK);
+    Serial1.write(recived_squence);
+}
+extern ReminderB *upcommingReminderB_;
+extern Box boxes[];
+void Communication_protocols::receive_reminderB_from_buffer(const byte total_sequence_number) {
+    send_tcp_ack(funct_id_get_next_reminderB_, 0);
+    auto reminder_b = new ReminderB();
+    for(int i=1;i<=total_sequence_number;i++) {
+        if(!wait_for_response()) return;
+        JsonDocument doc;
+        deserializeJson(doc, Serial1);
+        if(i==1) {
+            unsigned long time = doc["t"];
+            reminder_b->set_time(new DateTime(time));
+        }
+        byte box_no = doc["bn"];
+        boxes[--box_no].set_box(doc["mi"],doc["mn"],doc["ma"]);
+        Medicine *medicine = new Medicine(&boxes[box_no],doc["md"]);
+        reminder_b->add_medicine(medicine);
+
+        send_tcp_ack(funct_id_get_next_reminderB_, i);
+    }
+    upcommingReminderB_ = reminder_b;
+}
+
+
+void Communication_protocols::sendLong(const unsigned long res_long) {
+    const byte *res = longToByte(res_long);
+    for(int i=0;i<4;i++)
+        Serial1.write(res[i]);
+    Serial1.write(calcCRC8(res,4));
+    delete res;
 }
 
 
