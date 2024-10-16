@@ -4,9 +4,10 @@
 
 #include "Communication_protocols.h"
 #include <RTClib.h>
-#include <CRC.h>
 #include <ReminderB.h>
 #include <ArduinoJson.h>
+#include <CrcWriter.h>
+#include <FastCRC.h>
 extern RTC_DS3231 rtc;
 
 
@@ -23,13 +24,13 @@ void Communication_protocols::handle_communications() {
     }
 }
 
-void Communication_protocols::get_time() const {
+void Communication_protocols::get_time() {
     send_request_SYN(funct_id_getTime_);
 }
 
 void Communication_protocols::get_next_reminder_B(const unsigned long epoch) {
     get_next_time_ = epoch;
-    send_request_SYN(funct_id_get_next_reminderB_);
+    send_request_SYN(funct_id_get_reminderB_);
 }
 
 
@@ -38,17 +39,17 @@ void Communication_protocols::handle_header(const byte response_header)  {
     if(getFunction_id(response_header)==funct_id_getTime_) {
         if(getProtocol(response_header)==SYN_ACK) {
             Serial.println("Got SYN_ACK");
-            NTP_success(NTP_response_handler());
+            NTP_success(NTP_response_handler(funct_id_getTime_));
         }else if(getProtocol(response_header)==FIN) {
             Serial.println("protocolFIN");
             NTP_success(false);
         }else {
             clear_receive_buffer();
         }
-    }else  if(getFunction_id(response_header)==funct_id_get_next_reminderB_) {
+    }else  if(getFunction_id(response_header)==funct_id_get_reminderB_) {
         if(getProtocol(response_header)==SYN_ACK) {
             Serial.println("Got SYN_ACK");
-            get_reminder_b_response_handler();
+            get_reminder_b_response_handler(funct_id_get_reminderB_);
         }else if(getProtocol(response_header)==FIN) {
             Serial.println("protocolFIN");
             NTP_success(false);
@@ -62,131 +63,217 @@ void Communication_protocols::handle_header(const byte response_header)  {
 
 
 //throws TIMEOUT, SUCCESS, RETRY, ACK
-bool Communication_protocols::get_reminder_b_response_handler()  {
-    send_response_ACK(funct_id_get_next_reminderB_);
-    sendLong(get_next_time_);
-    if(!wait_for_response()) {
-        send_status_TIMEOUT(funct_id_getTime_);
-        return false;
-    }
+bool Communication_protocols::get_reminder_b_response_handler(const byte function_id) const {
+    send_response_ACK(function_id);
+    if(sendLong(get_next_time_, function_id)!= SUCCESS) return false;
 
-    unsigned long time_out_start = millis();
-    constexpr byte max_retries =40;
-    byte retry_count=0;
-    while(retry_count<max_retries) {
-        if(millis()-time_out_start>=time_out_) {
-            send_status_TIMEOUT(funct_id_getTime_);
-            return false;
-        }
-        if(Serial1.available()) {
-            byte res = Serial.read();
-            if(getFunction_id(res)==funct_id_get_next_reminderB_ && getProtocol(res)==TCP) {
-                const byte total_sequence_number = Serial1.read();
-                receive_reminderB_from_buffer(total_sequence_number);
-            }
-            if(getTimeFromBuffer()) {
-                send_status_SUCCESS(funct_id_getTime_);
-                return true;
-            }
-            send_request_RETRY(funct_id_getTime_);
-            time_out_start= millis();
-            retry_count++;
-        }
-    }
-    send_status_TIMEOUT(funct_id_getTime_);
-    return false;
+    const JsonDocument doc = receive_jsonDocument(function_id);
+    if(doc.size()==0) {
+        send_status_UNKW_ERROR(function_id);
+        return false;
+    };
+    return add_reminderb_to_class(doc);
 }
 
-void Communication_protocols::send_tcp_ack(const byte function_id, byte recived_squence) {
+
+byte extractHour(const String &formated_time) {
+    return formated_time.substring(0, 2).toInt();
+}
+byte extractMinute(const String &formated_time) {
+    return formated_time.substring(3, 5).toInt();
+}
+
+
+COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc, const byte function_id, const byte max_retries) {
+    COMM_PROTOCOL response_code = send_response_SYN_ACK(function_id);
+    if(response_code!=ACK) return response_code;
+
+    byte current_retries = 0;
+    while(current_retries<max_retries) {
+        if(current_retries>0) send_request_RETRY(function_id);
+
+        CrcWriter writer;
+        serializeMsgPack(doc, writer);
+        response_code = sendLong(writer.hash(), funct_id_get_reminderB_);
+        if(response_code!=SUCCESS) return response_code;
+
+        response_code = send_response_SYN_ACK(function_id,false);
+        if(response_code!=ACK) return response_code;
+        serializeMsgPack(doc,Serial1);
+
+        response_code=get_response(funct_id_get_reminderB_);
+        if(response_code != RETRY) return response_code;
+        current_retries++;
+    }
+    send_status_TIMEOUT(function_id);
+    return TIMEOUT;
+}
+
+JsonDocument Communication_protocols::receive_jsonDocument(const byte function_id, const byte max_retries) {
+    JsonDocument doc;
+    COMM_PROTOCOL response_code = get_response(function_id);
+    if(response_code!=SYN_ACK) return doc;
+    send_response_ACK(function_id);
+
+    byte current_retries = 0;
+    while(current_retries<max_retries) {
+        if(current_retries>0) {
+            send_request_RETRY(function_id);
+            response_code = get_response(function_id,false);
+            if (response_code!=RETRY) return doc;
+        }
+        const uint32_t crc = getLongFromBuffer(function_id);
+        if(!crc) {
+            close_session(function_id);
+            return doc;
+        }
+
+        if(get_response(function_id)!=SYN_ACK) {
+            close_session(function_id);
+            return doc;
+        }
+        send_response_ACK(function_id);
+
+        if(!wait_for_response(function_id)) return doc;
+        deserializeMsgPack(doc, Serial1);
+        CrcWriter writer;
+        serializeMsgPack(doc, writer);
+        if(writer.hash() == crc) {
+            send_status_SUCCESS(function_id);
+            return doc;
+        }
+        doc.clear();
+        current_retries++;
+    }
+    send_status_TIMEOUT(function_id);
+    return doc;
+}
+
+COMM_PROTOCOL Communication_protocols::sendLong(const unsigned long res_long, const byte function_id) {
+    const COMM_PROTOCOL rescode = send_response_SYN_ACK(function_id);
+    if(rescode!=ACK) return rescode;
+
+    constexpr byte max_retries = 20;
+    byte current_retries = 0;
+    while(current_retries<max_retries) {
+        if(current_retries>0) send_request_RETRY(function_id);
+
+        const byte *res = longToByte(res_long);
+        for(int i=0;i<4;i++) Serial1.write(res[i]);
+        FastCRC8 CRC8;
+        Serial1.write(CRC8.smbus(res ,4));
+        delete res;
+
+        const COMM_PROTOCOL response_code =get_response(function_id);
+        if(response_code != RETRY) return response_code;
+        current_retries++;
+    }
+    send_status_TIMEOUT(function_id);
+    return TIMEOUT;
+}
+
+unsigned long Communication_protocols::getLongFromBuffer(const byte function_id) {
+    COMM_PROTOCOL rescode = get_response(function_id);
+    if(rescode!=SYN_ACK) return 0;
+    send_response_ACK(function_id);
+
+    constexpr byte max_retries = 20;
+    byte current_retries = 0;
+    while(current_retries<max_retries) {
+        if(current_retries>0) {
+            send_request_RETRY(function_id);
+            rescode = get_response(function_id,false);
+            if (rescode!=RETRY) return 0;
+        }
+        byte long_[4]{};
+        for(int i=0;i<4;i++) { // NOLINT(*-loop-convert)
+            if(!wait_for_response(function_id)) return 0;
+            long_[i]=Serial1.read();
+        }
+        if(!wait_for_response(function_id))return 0;
+        const byte crc_val = Serial1.read();
+        FastCRC8 CRC8;
+        if(CRC8.smbus(long_, 4)==crc_val) {
+            send_status_SUCCESS(function_id);
+            return bytesToLong(long_);
+        }
+        current_retries++;
+    }
+    send_status_TIMEOUT(function_id);
+    return 0;
+}
+
+extern ReminderB *upcommingReminderB;
+extern Box boxes[];
+bool Communication_protocols::add_reminderb_to_class(JsonDocument doc) {
+    auto reminder_b = new ReminderB();
+    reminder_b->set_time_id(doc["ti"]);
+    const String time_str = doc["t"].as<String>();
+    reminder_b->set_time(new DateTime(0,0,0,extractHour(time_str), extractMinute(time_str)));
+    for(int i = 0;i<doc["m"].size();i++) {
+        byte box_no = doc["m"][i]["b"];
+        boxes[--box_no].set_box(doc["b"],doc["b"].as<String>(),doc["d"]);
+        const auto medicine = new Medicine(&boxes[box_no],doc["d"]);
+        reminder_b->add_medicine(medicine);
+    }
+    delete upcommingReminderB;
+    upcommingReminderB = reminder_b;
+    reminder_b=nullptr;
+    return true;
+}
+
+void Communication_protocols::send_tcp_ack(const byte function_id, const byte recived_squence) {
     send_header(function_id , SYN_ACK);
     Serial1.write(recived_squence);
 }
-extern ReminderB *upcommingReminderB_;
-extern Box boxes[];
-void Communication_protocols::receive_reminderB_from_buffer(const byte total_sequence_number) {
-    send_tcp_ack(funct_id_get_next_reminderB_, 0);
-    auto reminder_b = new ReminderB();
-    for(int i=1;i<=total_sequence_number;i++) {
-        if(!wait_for_response()) return;
-        JsonDocument doc;
-        deserializeJson(doc, Serial1);
-        if(i==1) {
-            unsigned long time = doc["t"];
-            reminder_b->set_time(new DateTime(time));
-        }
-        byte box_no = doc["bn"];
-        boxes[--box_no].set_box(doc["mi"],doc["mn"],doc["ma"]);
-        Medicine *medicine = new Medicine(&boxes[box_no],doc["md"]);
-        reminder_b->add_medicine(medicine);
-
-        send_tcp_ack(funct_id_get_next_reminderB_, i);
-    }
-    upcommingReminderB_ = reminder_b;
-}
 
 
-void Communication_protocols::sendLong(const unsigned long res_long) {
-    const byte *res = longToByte(res_long);
-    for(int i=0;i<4;i++)
-        Serial1.write(res[i]);
-    Serial1.write(calcCRC8(res,4));
-    delete res;
-}
+
 
 
 //throws TIMEOUT, SUCCESS, RETRY, ACK
-bool Communication_protocols::NTP_response_handler()  {
+bool Communication_protocols::NTP_response_handler(const byte function_id)  {
     constexpr byte max_retries =40;
-    send_response_ACK(funct_id_getTime_);
+    send_response_ACK(function_id);
     if(!wait_for_response()) {
-        send_status_TIMEOUT(funct_id_getTime_);
+        send_status_TIMEOUT(function_id);
         return false;
     };
 
     byte retry_count=0;
-    unsigned long time_out_start = millis();
     while(retry_count<max_retries) {
-        if(millis()-time_out_start>=time_out_) {
-            send_status_TIMEOUT(funct_id_getTime_);
+        if(wait_for_response()) {
+            send_status_TIMEOUT(function_id);
             return false;
         }
-        if(Serial1.available()) {
-            if(getTimeFromBuffer()) {
-                send_status_SUCCESS(funct_id_getTime_);
-                return true;
-            }
-            send_request_RETRY(funct_id_getTime_);
-            time_out_start= millis();
-            retry_count++;
+
+        const unsigned long value = getLongFromBuffer(function_id);
+        if(value) {
+            send_status_SUCCESS(function_id);
+            setTime(value);
+            return true;
         }
+        return false;
     }
-    send_status_TIMEOUT(funct_id_getTime_);
+    send_status_TIMEOUT(function_id);
     return false;
 }
 
 
-bool Communication_protocols::getTimeFromBuffer() {
-    byte tim[4]{};
-    for(int i=0;i<4;i++) {
-        tim[i]=Serial1.read();
-        printBin(tim[i]);
-        Serial.print(" ");
-    }
-    Serial.println();
 
-    const byte crc_val = Serial1.read();
-    if(calcCRC8(tim, 4)==crc_val) {
-        invert_stat_led();
-        Serial.print("Time : ");
-        Serial.println(bytesToLong(tim));
-        rtc.adjust(DateTime(bytesToLong(tim)));
-        return true;
-    }
-    return false;
+
+
+
+
+void Communication_protocols::setTime(const unsigned long ux_time) {
+    invert_stat_led();
+    Serial.print("Time : ");
+    Serial.println(ux_time);
+    rtc.adjust(DateTime(ux_time));
 }
 
 
-COMM_PROTOCOL Communication_protocols::get_response(const byte function_id) const {
+COMM_PROTOCOL Communication_protocols::get_response(const byte function_id, const bool clear_buffer)  {
     if(!wait_for_response())
         return TIMEOUT;
     while(Serial1.available()) {
@@ -194,6 +281,8 @@ COMM_PROTOCOL Communication_protocols::get_response(const byte function_id) cons
         if(getFunction_id(response_header)==function_id) {
             if(getProtocol(response_header)==ACK) {
                 return ACK;
+            }if(getProtocol(response_header)==SYN_ACK) {
+                return SYN_ACK;
             }if(getProtocol(response_header)==RETRY) {
                 return RETRY;
             }if(getProtocol(response_header)==FIN) {
@@ -202,8 +291,8 @@ COMM_PROTOCOL Communication_protocols::get_response(const byte function_id) cons
                 return SUCCESS;
             }
         }
+        if(clear_buffer) clear_receive_buffer();
     }
-    clear_receive_buffer();
     return UNKW_ERR;
 }
 
@@ -223,11 +312,20 @@ void Communication_protocols::invert_stat_led() {
     status_led_state_=!status_led_state_;
 }
 
-bool Communication_protocols::wait_for_response() const {
+bool Communication_protocols::wait_for_response() {
     const unsigned long time_out_start = millis();
     while(!Serial1.available())
         if(millis()-time_out_start>=time_out_)
             return false;
+    return true;
+}
+bool Communication_protocols::wait_for_response(const byte function_id) {
+    const unsigned long time_out_start = millis();
+    while(!Serial1.available())
+        if(millis()-time_out_start>=time_out_) {
+            send_status_TIMEOUT(function_id);
+            return false;
+        }
     return true;
 }
 void Communication_protocols::printBin(const byte aByte) {
@@ -245,14 +343,14 @@ void Communication_protocols::printlnBin(const byte aByte) {
 byte Communication_protocols::getProtocol(const byte b) {
     return b & PROTOCOL_FILTER;
 }
-byte Communication_protocols::getFunction_id(const byte response_header) const {
+byte Communication_protocols::getFunction_id(const byte response_header) {
     return response_header & function_id_filter_;
 }
 
 
-COMM_PROTOCOL Communication_protocols::send_response_SYN_ACK(const byte function_id) const {
+COMM_PROTOCOL Communication_protocols::send_response_SYN_ACK(const byte function_id, const bool clear_buffer) {
     send_header(function_id , SYN_ACK);
-    return get_response(function_id);
+    return get_response(function_id, clear_buffer);
 }
 void Communication_protocols::send_response_ACK(const byte function_id) {
     send_header(function_id , ACK);
@@ -266,6 +364,9 @@ void Communication_protocols::send_request_RETRY(const byte function_id) {
 }
 void Communication_protocols::send_status_SUCCESS(const byte function_id) {
     send_header(function_id , SUCCESS);
+}
+void Communication_protocols::send_status_UNKW_ERROR(const byte function_id) {
+    send_header(function_id , UNKW_ERR);
 }
 void Communication_protocols::send_status_TIMEOUT(const byte function_id) {
     send_header(function_id , TIMEOUT);

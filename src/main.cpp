@@ -89,11 +89,17 @@ unsigned long get_current_plain_unix_time() {
     const DateTime curr_time = rtc.now();
     const auto temp = DateTime(0,0,0,curr_time.hour(),curr_time.minute(),curr_time.second());
     return temp.unixtime();
-
 }
 
 String get_formated_Time(const byte mode) {
     const DateTime curr_time = rtc.now();
+    // DateTime *a = new DateTime(554);
+    // delete a;
+    // a= new DateTime(455);
+    // Serial.print(a->hour());
+
+
+    // curr_time.
     // Serial.println(curr_time.unixtime());
     if(mode == 12)
         return
@@ -345,62 +351,4 @@ void initializePins(){
     digitalWrite(static_cast<uint8_t>(AV_PINS::beeper),HIGH);
 }
 
-// void addRemindes() {
-//     String json =R"(
-//     [
-//         {
-//             "timeId": 24,
-//             "time": "00:10",
-//             "medicines": [
-//                 {
-//                     "medBox": 9,
-//                     "dosage": 1,
-//                     "success": false
-//                 }
-//             ]
-//         },
-//         {
-//             "timeId": 6,
-//             "time": "00:20",
-//             "medicines": [
-//                 {
-//                     "medBox": 14,
-//                     "dosage": 2,
-//                     "success": false
-//                 },
-//                 {
-//                     "medBox": 9,
-//                     "dosage": 3,
-//                     "success": false
-//                 }
-//             ]
-//         },
-//         {
-//             "timeId": 4,
-//             "time": "10:05",
-//             "medicines": [
-//                 {
-//                     "medBox": 7,
-//                     "dosage": 3,
-//                     "success": false
-//                 }
-//             ]
-//         },
-//         {
-//             "timeId": 3,
-//             "time": "20:45",
-//             "medicines": [
-//                 {
-//                     "medBox": 7,
-//                     "dosage": 2,
-//                     "success": false
-//                 },
-//                 {
-//                     "medBox": 14,
-//                     "dosage": 4,
-//                     "success": false
-//                 }
-//             ]
-//         }
-//     ])";
-// }
+
