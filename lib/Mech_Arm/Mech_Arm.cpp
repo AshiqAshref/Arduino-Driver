@@ -1,5 +1,6 @@
 #include "Mech_Arm.h"
 
+#include <AV_Functions.h>
 #include <MultiStepper.h>
 #include <BUTTON_PINS.h>
 #include <STEPPER_PINS.h>

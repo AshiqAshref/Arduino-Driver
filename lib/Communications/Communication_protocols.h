@@ -1,8 +1,9 @@
 #ifndef COMMUNICATION_PROTOCOLS_H
 #define COMMUNICATION_PROTOCOLS_H
 #include <Arduino.h>
-#include <ReminderB.h>
-#include <ArduinoJson/Document/JsonDocument.hpp>
+#include <ArduinoJson.h>
+#include <IPAddress.h>
+
 
 
 enum COMM_PROTOCOL:byte {
@@ -19,65 +20,62 @@ enum COMM_PROTOCOL:byte {
     PROTOCOL_FILTER = 0b11110000
 };
 
-constexpr byte funct_id_getTime_ =   0b00001000;
-constexpr byte funct_id_get_reminderB_ = 0b00001100;
-constexpr byte function_id_filter_ = 0b00001111;
+enum Commands:byte {
+    GET_TIME =          0b00001000,
+    GET_REMINDER_B =    0b00001100,
+    ACTIVATE_AP =       0b00000100,
+    DEACTIVATE_AP =     0b00000010,
+    COMMAND_FILTER =    0b00001111
+};
+
+enum CommandStatus:byte {
+    IN_PROGRESS = 0b10101010,
+    FAILED = 0b01010101,
+    COMPLETED = 0b00111100,
+};
+
+
 constexpr unsigned long time_out_ = 10000;
+
+constexpr  unsigned long retry_interval_onSucc_= 3600000;
+constexpr unsigned long retry_interval_onFail_= 30000;
+
 
 
 class Communication_protocols {
-    const unsigned long retry_interval_onSucc_= 3600000;
-    const unsigned long retry_interval_onFail_= 30000;
-    unsigned long NTP_refresh_rate_ = 0;
-    unsigned long get_next_time_ = 0;
+protected:
+    static byte getProtocol(byte header);
+    static COMM_PROTOCOL get_response(Commands command, bool clear_buffer = true);
 
-    bool get_next_reminder_status=false;
+    static byte getCommand(byte header);
+    static COMM_PROTOCOL send_response_SYN_ACK(Commands command, bool clear_buffer = true) ;
+    static void send_request_SYN(Commands command);
+    static void send_response_ACK(Commands command);
+    static void send_request_RETRY(Commands command);
+    static void send_status_SUCCESS(Commands command);
+    static void send_status_UNKW_ERROR(Commands command);
+    static void send_status_TIMEOUT(Commands command);
+    static void send_header(Commands command,  byte protocol_id);
+    static void close_session(Commands command);
 
+    static void initialize();
 
-    static byte getProtocol(byte b);
-    static COMM_PROTOCOL get_response(byte function_id, bool clear_buffer = true);
+    static COMM_PROTOCOL sendJsonDocument(const JsonDocument &doc, Commands command, byte max_retries=20);
+    static JsonDocument receive_jsonDocument(Commands command, byte max_retries=20);
+    static COMM_PROTOCOL sendLong(unsigned long res_long, Commands command);
+    static unsigned long receive_long(Commands command);
+    static IPAddress receive_IP(Commands command, byte max_retries=20);
+    static COMM_PROTOCOL send_IP(const IPAddress &IP, Commands command);
 
-    static byte getFunction_id(byte response_header);
-    static COMM_PROTOCOL send_response_SYN_ACK(byte function_id, bool clear_buffer = true) ;
-    static void send_request_SYN(byte function_id);
-    static void send_response_ACK(byte function_id);
-    static void send_request_RETRY(byte function_id);
-    static void send_status_SUCCESS(byte function_id);
-    static void send_status_UNKW_ERROR(byte function_id);
-    static void send_status_TIMEOUT(byte function_id);
-    static void send_header(byte function_id,  byte protocol_id);
-    static void close_session(byte function_id);
-
-
-    static COMM_PROTOCOL sendJsonDocument(const ArduinoJson::JsonDocument &doc, byte function_id, byte max_retries=20);
-
-    static ArduinoJson::JsonDocument receive_jsonDocument(byte function_id, byte max_retries=20);
-    static unsigned long getLongFromBuffer(byte function_id);
-
-    static void send_tcp_ack(byte function_id, byte recived_squence);
     static void clear_receive_buffer();
-
-
-    void setTime(unsigned long ux_time);
-    // void handleResponse();
-    // void handleRequest();
-    void handle_header(byte response_header) ;
-    bool NTP_response_handler(const byte function_id) ;
-    bool get_reminder_b_response_handler(const byte function_id) const;
-
-
+    static byte extractHour(const String &formated_time);
+    static byte extractMinute(const String &formated_time);
     static bool wait_for_response();
-
-    static bool wait_for_response(byte function_id);
-
-    void NTP_success(bool success);
-    static bool add_reminderb_to_class(ArduinoJson::JsonDocument doc);
+    static bool wait_for_response(Commands command);
 
 public:
-    bool status_led_state_ = false;
     Communication_protocols()=default;
-    void handle_communications() ;
-    void invert_stat_led();
+    
 
     static byte *longToByte(unsigned long long_);
     static unsigned long bytesToLong(const byte *byte_);
@@ -87,12 +85,7 @@ public:
     static void printlnBin(byte aByte);
 
     static COMM_PROTOCOL byte_to_enum(byte protocol_id);
-
-    static void get_time();
-    void get_next_reminder_B(unsigned long epoch);
-    static COMM_PROTOCOL sendLong(const unsigned long res_long, const byte function_id);
-    bool get_next_reminder_received() const {return get_next_reminder_status;}
-
+    static void invert_stat_led();
 };
 
 

@@ -20,7 +20,7 @@ void Blink::blink_ch() const {
     led_indicator.setColor(this->boxNo_, this->color_a);
 }
 void Blink::blink_st() const {
-    COLOR color[2] = {this->color_a,this->color_b};
+    const COLOR color[2] = {this->color_a,this->color_b};
     led_indicator.setColor(this->boxNo_, color);
 }
 

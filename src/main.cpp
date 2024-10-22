@@ -2,15 +2,16 @@
 #include "Main.h"
 #include <Led_indicator.h>
 #include <Mech_Arm.h>
-#include <COLOR.h>
+// #include <COLOR.h>
 
 // #include <Led_Coordinate.h>
 // #include <SoftwareSerial.h>
 #include <BUTTON_PINS.h>
 #include <AV_PINS.h>
-#include <ArduinoJson.h>
+// #include <ArduinoJson.h>
 #include <LiquidCrystal_I2C.h>
 #include <Blink_Array.h>
+#include <CommunicationHandler.h>
 #include <Lcd_Menu.h>
 #include <sensor_unit.h>
 #include <Status_Directive.h>
@@ -20,8 +21,8 @@
 
 // #include <AV_Functions.h>
 
-byte box_size = 16;
-Box boxes[16] = {
+constexpr byte box_size = 16;
+Box boxes[box_size] = {
     Box(1 , Pos_Coordinate(xCordinate[0] ,yCordinate[0] , zCordinate[0])) ,
     Box(2 , Pos_Coordinate(xCordinate[1] ,yCordinate[1] , zCordinate[1])) ,
     Box(3 , Pos_Coordinate(xCordinate[2] ,yCordinate[2] , zCordinate[2])) ,
@@ -40,15 +41,16 @@ Box boxes[16] = {
     Box(16, Pos_Coordinate(xCordinate[15],yCordinate[15], zCordinate[15]))
 };
 
+
 RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-extern Lcd_Menu lcd_menu;
+auto lcd_menu = Lcd_Menu();
 auto led_indicator = Led_Indicator();
 auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
-auto comms = Communication_protocols();
-ReminderB *upcommingReminderB=nullptr;
+auto upcommingReminderB=  ReminderB();
+
 
 
 
@@ -56,7 +58,7 @@ void setup() {
     pinMode(STAT_LED_PIN,OUTPUT);
     digitalWrite(STAT_LED_PIN,HIGH);
     initializePins();
-    lcd_menu.initializeLcd();
+    Lcd_Menu::initializeLcd();
 
     Serial.begin(9600);
     Serial1.begin(115200);
@@ -65,24 +67,33 @@ void setup() {
     for(auto &box : boxes)
         box.set_status(DEFAULT_);
 
+
 }
 
 unsigned long prevTime=0;
 unsigned long prevTime_since_reminder_request=0;
-
 void loop() {
     if (millis()-prevTime>1000) {
         prevTime=millis();
-        lcd.setCursor(4,1);
-        lcd.print(get_formated_Time(12));
+        const DateTime current_time = rtc.now();
+        if(upcommingReminderB.check_for_alarm(current_time))
+            Serial.println("ALARM");
+        print_lcd_time(current_time,12);
         Sensor_unit::check_if_any_box_open();
+
     }
-    if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB) {
-        comms.get_next_reminder_B(get_current_plain_unix_time());
+    if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB.isValid()) {
+        CommunicationHandler::get_next_reminder_B(get_current_plain_unix_time());
     }
 
     blink_array.blinkAll();
-    comms.handle_communications();
+    CommunicationHandler::handle_communications();
+    Lcd_Menu::handleMenu();
+}
+
+void print_lcd_time(const DateTime &current_time, const byte mode) {
+    lcd.setCursor(4,1);
+    lcd.print(get_formated_Time(current_time,mode));
 }
 
 unsigned long get_current_plain_unix_time() {
@@ -91,16 +102,7 @@ unsigned long get_current_plain_unix_time() {
     return temp.unixtime();
 }
 
-String get_formated_Time(const byte mode) {
-    const DateTime curr_time = rtc.now();
-    // DateTime *a = new DateTime(554);
-    // delete a;
-    // a= new DateTime(455);
-    // Serial.print(a->hour());
-
-
-    // curr_time.
-    // Serial.println(curr_time.unixtime());
+String get_formated_Time(const DateTime &curr_time, const byte mode) {
     if(mode == 12)
         return
             beautifyTime(curr_time.twelveHour())+":"

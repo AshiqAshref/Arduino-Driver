@@ -7,7 +7,7 @@
 
 class ReminderA{
     unsigned int id=0;
-    Box *box;
+    Box *box = nullptr;
     DateTime *time=new DateTime(0,0,0);;
     boolean success=false;
 public:
