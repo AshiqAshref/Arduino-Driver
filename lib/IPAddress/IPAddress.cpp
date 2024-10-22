@@ -81,8 +81,6 @@ String IPAddress::toString() const
 
 bool IPAddress::fromString(const char *address)
 {
-    // TODO: add support for "a", "a.b", "a.b.c" formats
-
     uint16_t acc = 0; // Accumulator
     uint8_t dots = 0;
 
