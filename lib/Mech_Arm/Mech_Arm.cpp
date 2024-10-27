@@ -31,11 +31,11 @@ void Mech_Arm::initializeSteppers() const {
     pinMode(static_cast<uint8_t>(STEPPER_PINS::zEnable), OUTPUT);
     pinMode(static_cast<uint8_t>(STEPPER_PINS::zEnable), OUTPUT);
 
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::enterButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::leftButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::rightButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::upButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::downButton),INPUT);
+    pinMode(BUTTON_ENTER,INPUT);
+    pinMode(BUTTON_LEFT,INPUT);
+    pinMode(BUTTON_RIGHT,INPUT);
+    pinMode(BUTTON_UP,INPUT);
+    pinMode(BUTTON_DOWN,INPUT);
 
     // stepperX->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::xEnable));
     // stepperY->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::yEnable));
@@ -373,7 +373,7 @@ void Mech_Arm::boxMarker(){
         }
 
         bool enterPressed=false;
-        while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))){
+        while(digitalRead(BUTTON_ENTER)){
             enterPressed=true;
         }if(enterPressed){
             Xcord[currentBox-1]=xAxis;
@@ -415,13 +415,13 @@ void Mech_Arm::boxMarker(){
             Serial.println("\n}\n\n");
         }
 
-        while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::rightButton))==HIGH){
-            delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
+        while(digitalRead(BUTTON_RIGHT)==HIGH){
+            delay(BUTTON_DELAY);
             if(!change)
                 xAxis=xAxis+static_cast<long>(steps);
             change=true;
-        }while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::leftButton))==HIGH){
-            delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
+        }while(digitalRead(BUTTON_LEFT)==HIGH){
+            delay(BUTTON_DELAY);
             if(!change){
                 if(static_cast<double>(xAxis)<=steps)
                     xAxis=0;
@@ -431,14 +431,14 @@ void Mech_Arm::boxMarker(){
             change=true;
         }
 
-        while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::upButton))==HIGH){
-            delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
+        while(digitalRead(BUTTON_UP)==HIGH){
+            delay(BUTTON_DELAY);
             if(!change){
                 yAxis= yAxis + static_cast<unsigned long>(steps);
             }
             change=true;
-        }while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::downButton))==HIGH){
-            delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
+        }while(digitalRead(BUTTON_DOWN)==HIGH){
+            delay(BUTTON_DELAY);
             if(!change){
                 if(static_cast<double>(yAxis)<=steps)
                     yAxis=0;
@@ -448,13 +448,13 @@ void Mech_Arm::boxMarker(){
             change=true;
         }
 
-        while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::frontButton))==HIGH){
-            delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
+        while(digitalRead(BUTTON_FORWARD)==HIGH){
+            delay(BUTTON_DELAY);
             if(!change)
                 zAxis=zAxis+static_cast<long>(steps);
             change=true;
-        }while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::backButton))==HIGH){
-            delay(static_cast<uint8_t>(BUTTON_PINS::buttonDelay));
+        }while(digitalRead(BUTTON_BACKWARD)==HIGH){
+            delay(BUTTON_DELAY);
             if(!change){
                 if(static_cast<double>(zAxis)<=steps)
                     zAxis=0;

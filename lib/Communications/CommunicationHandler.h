@@ -3,39 +3,40 @@
 #define COMMUNICATIONHANDLER_H
 #include <Arduino.h>
 #include <Communication_protocols.h>
-#include <ArduinoJson.h>
-#include <RTClib.h>
-#include <Lcd_Menu.h>
+// #include <ArduinoJson.h>
 
 
-
+struct command_details {
+    Command_enum command{};
+    CommandStatus status = COMPLETED;
+    const unsigned long retry_interval_on_fail=5000;
+    unsigned long current_millis=0;
+    void (*send_request)(){};
+    bool (*request_handler)(){};
+    bool (*response_handler)(){};
+};
 
 constexpr unsigned long get_reminder_refresh_rate_ = 10000;
 
-
 class CommunicationHandler: public Communication_protocols{
-    static bool get_reminder_b_response_handler(Commands command) ;
-
-    static void send_command_deactivate_ap();
-
-    static bool deactivate_AP_response_handler(Commands command);
-
-    static bool deactivate_AP_request_handler(Commands command);
-
-    static bool activate_AP_response_handler(Commands command);
-
-    static void reminder_b_success(bool success);
-    static void NTP_success(bool success);
     static void setTime(unsigned long ux_time);
     static void add_reminderb_to_class(JsonDocument doc);
-    static bool NTP_response_handler(Commands command) ;
-    static void handle_header(byte response_header) ;
+    static void handle_header(byte response_header);
+
 public:
-    static void get_next_reminder_B(unsigned long epoch);
     static void handle_communications();
-    static void get_time();
 
+    static void send_command_get_time();
+    static void send_command_activate_ap();
+    static void send_command_deactivate_ap();
+    static void send_command_get_reminder_B(unsigned long epoch);
+    static void resend_command_get_reminder_B();
 
+    static bool get_reminder_b_response_handler(unsigned long get_reminder_time_key) ;
+    static bool deactivate_AP_response_handler();
+    static bool deactivate_AP_request_handler();
+    static bool activate_AP_response_handler();
+    static bool NTP_response_handler();
 
 };
 

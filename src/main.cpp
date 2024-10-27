@@ -9,16 +9,19 @@
 #include <BUTTON_PINS.h>
 #include <AV_PINS.h>
 // #include <ArduinoJson.h>
+#include <Command_activate_AP.h>
+#include <Command_deactivate_ap.h>
+#include <Command_get_reminderB.h>
+#include <Command_get_time.h>
 #include <LiquidCrystal_I2C.h>
 #include <Blink_Array.h>
 #include <CommunicationHandler.h>
 #include <Lcd_Menu.h>
+#include <Network_info.h>
 #include <sensor_unit.h>
 #include <Status_Directive.h>
 #include <RTClib.h>
-#include <Communication_protocols.h>
 #include <ReminderB.h>
-
 // #include <AV_Functions.h>
 
 constexpr byte box_size = 16;
@@ -42,6 +45,29 @@ Box boxes[box_size] = {
 };
 
 
+
+auto command_get_time = Command_get_time(
+        CommunicationHandler::send_command_get_time,
+        CommunicationHandler::NTP_response_handler,
+        [](){return true;},
+        20000, 3600000);
+auto command_get_reminder_b = Command_get_reminderB (
+        CommunicationHandler::resend_command_get_reminder_B,
+        CommunicationHandler::get_reminder_b_response_handler,
+        [](){return true;},
+        2000);
+auto command_activate_AP = Command_activate_AP (
+        CommunicationHandler::send_command_activate_ap,
+        CommunicationHandler::activate_AP_response_handler,
+        [](){return true;},
+        2000);
+auto command_deactivate_ap = Command_deactivate_ap(
+        CommunicationHandler::send_command_deactivate_ap,
+        CommunicationHandler::deactivate_AP_response_handler,
+        CommunicationHandler::deactivate_AP_request_handler,
+        2000);
+
+
 RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 auto lcd_menu = Lcd_Menu();
@@ -50,7 +76,7 @@ auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
 auto upcommingReminderB=  ReminderB();
-
+auto network_info= Network_info();
 
 
 
@@ -82,9 +108,11 @@ void loop() {
         Sensor_unit::check_if_any_box_open();
 
     }
-    if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB.isValid()) {
-        CommunicationHandler::get_next_reminder_B(get_current_plain_unix_time());
-    }
+    // if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB.isValid()) {
+    //     CommunicationHandler::send_command_get_reminder_B(get_current_plain_unix_time());
+    //     prevTime_since_reminder_request=millis();
+    //
+    // }
 
     blink_array.blinkAll();
     CommunicationHandler::handle_communications();
@@ -343,13 +371,13 @@ String beautifyTime(const uint8_t h_m_s) {
 
 void initializePins(){
     pinMode(static_cast<uint8_t>(AV_PINS::beeper), OUTPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::enterButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::leftButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::rightButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::upButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::downButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::frontButton),INPUT);
-    pinMode(static_cast<uint8_t>(BUTTON_PINS::backButton),INPUT);
+    pinMode(BUTTON_ENTER,INPUT);
+    pinMode(BUTTON_LEFT,INPUT);
+    pinMode(BUTTON_RIGHT,INPUT);
+    pinMode(BUTTON_UP,INPUT);
+    pinMode(BUTTON_DOWN,INPUT);
+    pinMode(BUTTON_FORWARD,INPUT);
+    pinMode(BUTTON_BACKWARD,INPUT);
     digitalWrite(static_cast<uint8_t>(AV_PINS::beeper),HIGH);
 }
 
