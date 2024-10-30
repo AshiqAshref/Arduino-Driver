@@ -2,11 +2,11 @@
 
 #include <Command_activate_AP.h>
 #include <Command_deactivate_ap.h>
+#include <Command_get_network_inf.h>
 #include <Command_get_reminderB.h>
 #include <Command_get_time.h>
 #include <Network_info.h>
 #include <ReminderB.h>
-// #include <Lcd_Menu.h>
 
 unsigned long get_reminder_time_key = 0;
 bool get_next_reminder_status=false;
@@ -17,14 +17,14 @@ extern Box boxes[];
 extern Network_info network_info;
 IPAddress ip;
 
-
 extern Command_get_time command_get_time;
 extern Command_get_reminderB command_get_reminder_b;
 extern Command_activate_AP command_activate_AP;
 extern Command_deactivate_ap command_deactivate_ap;
+extern Command_get_network_inf command_get_network_inf;
 
-constexpr byte commands_size=4;
-Command *commands[commands_size]= {&command_get_time, &command_get_reminder_b,&command_activate_AP,&command_deactivate_ap}; // NOLINT(*-slicing, *-interfaces-global-init)
+constexpr byte commands_size=5;
+Command *commands[commands_size]= {&command_get_time, &command_get_reminder_b,&command_activate_AP,&command_deactivate_ap, &command_get_network_inf}; // NOLINT(*-slicing, *-interfaces-global-init)
 
 
 void CommunicationHandler::handle_header(const byte response_header) {
@@ -43,6 +43,7 @@ void CommunicationHandler::handle_header(const byte response_header) {
             }else if(getProtocol(response_header)==FIN) {
                 commands[i]->set_status(FAILED);
             }else {
+                Serial.println("IDK WTF");
                 send_status_UNKW_ERROR(commands[i]->command());
                 break;
             }
@@ -53,6 +54,7 @@ void CommunicationHandler::handle_header(const byte response_header) {
 void CommunicationHandler::handle_communications() {
     if(Serial1.available()){
         const byte response_header = Serial1.read();
+        Serial.println();
         Serial.print("RCV: ");
         printHeader(response_header);
         clear_receive_buffer();
@@ -70,6 +72,67 @@ void CommunicationHandler::handle_communications() {
     //     command_get_time.send_request();
     // }
 }
+
+bool CommunicationHandler::get_network_inf_request_handler() {
+    Serial.println("NET_INF - REQ_H");
+    constexpr Command_enum command = GET_NETWORK_INF;
+    if(send_response_SYN_ACK(command)!=ACK) return false;
+    send_status_SUCCESS(command);
+    network_info.set_needs_update();
+    return true;
+}
+bool CommunicationHandler::get_network_inf_response_handler() {
+    if(!get_network_inf_response_handler_local()) {
+        network_info.set_needs_update();
+        return false;
+    }
+    return true;
+}
+bool CommunicationHandler::get_network_inf_response_handler_local() {
+    Serial.println("NET_INF RES_H");
+    constexpr Command_enum command = GET_NETWORK_INF;
+    send_response_ACK(command);
+    if(!wait_for_response()) return false;
+    const byte net_stat = Serial1.read();
+    if(!wait_for_response()) return false;
+    if(Serial1.read()-10==net_stat) {
+        Serial.println("crc pass");
+        send_status_SUCCESS(command);
+    }else {
+        Serial.println("crc fail");
+        close_session(command);
+        return false;
+    }
+    Serial.print("net_stat: ");
+    Serial.println(net_stat);
+    if(net_stat==24) {
+        const IPAddress ip = receive_IP(command);
+        if(ip.toString() == "0.0.0.0") {
+            close_session(command);
+            return false;
+        }
+        network_info.set_ap_active(ip);
+        send_status_SUCCESS(command);
+        return true;
+    }if(net_stat==60) {
+        const IPAddress ip = receive_IP(command);
+        if(ip.toString() == "0.0.0.0") {
+            close_session(command);
+            return false;
+        }
+        network_info.set_wifi_active(ip);
+        send_status_SUCCESS(command);
+        return true;
+    }if(net_stat==36) {
+        network_info.set_none_active();
+        send_status_SUCCESS(command);
+        return true;
+    }
+    network_info.set_none_active();
+    close_session(command);
+    return false;
+}
+
 
 bool CommunicationHandler::get_reminder_b_response_handler(const unsigned long get_reminder_time_key)  {
     Serial.println("REMB RES_H");
@@ -103,39 +166,45 @@ bool CommunicationHandler::deactivate_AP_response_handler() {
     send_response_ACK(command);
     const COMM_PROTOCOL response_code = get_response(command);
     if(response_code!=SUCCESS) {
-        network_info.set_ap_active(true);
+        network_info.set_needs_update();
         return false;
     }
-    network_info.set_ap_active(false);
+    network_info.set_needs_update();
     return true;
 }
 
 bool CommunicationHandler::deactivate_AP_request_handler()  {
     Serial.println("DCT_AP REQ_H");
     constexpr Command_enum command = DEACTIVATE_AP;
-    if(send_response_SYN_ACK(command)!=ACK) return false;
+    if(send_response_SYN_ACK(command)!=ACK) {
+        network_info.set_needs_update();
+        return false;
+    };
     send_status_SUCCESS(command);
-    network_info.set_ap_active(false);
+    network_info.set_needs_update();
     return true;
 }
+
+
 bool CommunicationHandler::activate_AP_response_handler()  {
     Serial.println("ACT_AP RES_H");
     constexpr Command_enum command=ACTIVATE_AP;
     send_response_ACK(command);
 
     const COMM_PROTOCOL response_code = get_response(command);
-    if(response_code==FIN) {
+    if(response_code!=READY_TO_SEND) {
         return false;
     }
-    send_response_ACK(command);
+    send_response_READY_TO_RECV(command);
 
     const IPAddress ip_address = receive_IP(command);
     Serial.println(ip_address);
     if(ip_address.toString()=="0.0.0.0") {
-        send_status_UNKW_ERROR(command);
+        Serial.print("Wrong IP ");
+        close_session(command);
         return false;
     }
-    network_info.set_IP(ip_address);
+    network_info.set_ap_active(ip_address);
     return true;
 }
 
@@ -165,6 +234,9 @@ void CommunicationHandler::resend_command_get_reminder_B() {
 }
 void CommunicationHandler::send_command_get_time() {
     send_request_SYN(GET_TIME);
+}
+void CommunicationHandler::send_command_get_network_inf() {
+    send_request_SYN(GET_NETWORK_INF);
 }
 void CommunicationHandler::send_command_get_reminder_B(const unsigned long epoch) {
     get_reminder_time_key = epoch;

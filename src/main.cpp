@@ -15,6 +15,7 @@
 #include <Command_get_time.h>
 #include <LiquidCrystal_I2C.h>
 #include <Blink_Array.h>
+#include <Command_get_network_inf.h>
 #include <CommunicationHandler.h>
 #include <Lcd_Menu.h>
 #include <Network_info.h>
@@ -44,8 +45,6 @@ Box boxes[box_size] = {
     Box(16, Pos_Coordinate(xCordinate[15],yCordinate[15], zCordinate[15]))
 };
 
-
-
 auto command_get_time = Command_get_time(
         CommunicationHandler::send_command_get_time,
         CommunicationHandler::NTP_response_handler,
@@ -65,6 +64,11 @@ auto command_deactivate_ap = Command_deactivate_ap(
         CommunicationHandler::send_command_deactivate_ap,
         CommunicationHandler::deactivate_AP_response_handler,
         CommunicationHandler::deactivate_AP_request_handler,
+        2000);
+auto command_get_network_inf = Command_get_network_inf(
+        CommunicationHandler::send_command_get_network_inf,
+        CommunicationHandler::get_network_inf_response_handler,
+        CommunicationHandler::get_network_inf_request_handler,
         2000);
 
 

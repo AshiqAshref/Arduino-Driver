@@ -10,6 +10,8 @@ enum COMM_PROTOCOL:byte {
     SYN =             0b10000000,
     SYN_ACK =         0b01000000,
     ACK =             0b11000000,
+    READY_TO_SEND =   0b11100000,
+    READY_TO_RECV =   0b00110000,
     FIN =             0b00100000,
     UNKW_ERR=         0b01010000,
     RETRY =           0b01100000,
@@ -23,6 +25,7 @@ enum Command_enum:byte {
     GET_REMINDER_B =    0b00001100,
     ACTIVATE_AP =       0b00000100,
     DEACTIVATE_AP =     0b00000010,
+    GET_NETWORK_INF =   0b00000011,
     COMMAND_FILTER =    0b00001111
 };
 
@@ -54,7 +57,6 @@ public:
           retry_interval(retry_interval) {
     }
 
-
     virtual Command_enum command()=0;
     void send_request(){
         this->set_status(IN_PROGRESS);
@@ -77,6 +79,16 @@ public:
     CommandStatus status() const {return status_;}
 };
 
+/* *********************************************************************************
+ *                              CREATING A COMMAND                                 *
+ *  1) Add command to Command_enum and assign a bite to it                         *
+ *  2) create a class and pass new command_enum in constructor                     *
+ *  3) Add command_enum to Communication_protocols::command_as_String()            *
+ *  4) create send_request, request_handler and response_handler for the command.  *
+ *  5) declare and initialise the new Command class in main                        *
+ *  6) extend the command declaration in CommunicationHandler                      *
+ *  7) add command to CommunicationHandler::commands array.                        *
+ ********************************************************************************* */
 
 
 #endif //COMMAND_H

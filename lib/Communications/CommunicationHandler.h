@@ -22,7 +22,7 @@ class CommunicationHandler: public Communication_protocols{
     static void setTime(unsigned long ux_time);
     static void add_reminderb_to_class(JsonDocument doc);
     static void handle_header(byte response_header);
-
+static bool get_network_inf_response_handler_local();
 public:
     static void handle_communications();
 
@@ -35,6 +35,11 @@ public:
     static bool get_reminder_b_response_handler(unsigned long get_reminder_time_key) ;
     static bool deactivate_AP_response_handler();
     static bool deactivate_AP_request_handler();
+
+    static void send_command_get_network_inf();
+    static bool get_network_inf_response_handler();
+    static bool get_network_inf_request_handler();
+
     static bool activate_AP_response_handler();
     static bool NTP_response_handler();
 

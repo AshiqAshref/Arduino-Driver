@@ -3,8 +3,8 @@
 #include <CrcWriter.h>
 #include <FastCRC.h>
 
-
-COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc, const Command_enum command, const byte max_retries) {
+constexpr byte max_retries=20;
+COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc, const Command_enum command) {
     COMM_PROTOCOL response_code = send_response_SYN_ACK(command);
     if(response_code!=ACK) return response_code;
 
@@ -17,8 +17,8 @@ COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc,
         response_code = sendLong(writer.hash(), GET_REMINDER_B);
         if(response_code!=SUCCESS) return response_code;
 
-        response_code = send_response_SYN_ACK(command,false);
-        if(response_code!=ACK) return response_code;
+        response_code = send_response_READY_TO_SEND(command,false);
+        if(response_code!=READY_TO_RECV) return response_code;
         serializeMsgPack(doc,Serial1);
 
         response_code=get_response(GET_REMINDER_B);
@@ -28,7 +28,7 @@ COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc,
     send_status_TIMEOUT(command);
     return TIMEOUT;
 }
-JsonDocument Communication_protocols::receive_jsonDocument(const Command_enum command, const byte max_retries) {
+JsonDocument Communication_protocols::receive_jsonDocument(const Command_enum command) {
     JsonDocument doc;
     COMM_PROTOCOL response_code = get_response(command);
     if(response_code!=SYN_ACK) return doc;
@@ -47,11 +47,11 @@ JsonDocument Communication_protocols::receive_jsonDocument(const Command_enum co
             return doc;
         }
 
-        if(get_response(command)!=SYN_ACK) {
+        if(get_response(command)!=READY_TO_SEND) {
             close_session(command);
             return doc;
         }
-        send_response_ACK(command);
+        send_response_READY_TO_RECV(command);
 
         if(!wait_for_response(command)) return doc;
         deserializeMsgPack(doc, Serial1);
@@ -71,7 +71,6 @@ COMM_PROTOCOL Communication_protocols::sendLong(const unsigned long res_long, co
     const COMM_PROTOCOL rescode = send_response_SYN_ACK(command);
     if(rescode!=ACK) return rescode;
 
-    constexpr byte max_retries = 20;
     byte current_retries = 0;
     while(current_retries<max_retries) {
         if(current_retries>0) send_request_RETRY(command);
@@ -94,7 +93,6 @@ unsigned long Communication_protocols::receive_long(const Command_enum command) 
     if(rescode!=SYN_ACK) return 0;
     send_response_ACK(command);
 
-    constexpr byte max_retries = 20;
     byte current_retries = 0;
     while(current_retries<max_retries) {
         if(current_retries>0) {
@@ -120,7 +118,8 @@ unsigned long Communication_protocols::receive_long(const Command_enum command) 
     return 0;
 }
 
-IPAddress Communication_protocols::receive_IP(const Command_enum command, const byte max_retries) {
+IPAddress Communication_protocols::receive_IP(const Command_enum command) {
+    Serial.println("RECV_IP");
     IPAddress IP;
     COMM_PROTOCOL response_code = get_response(command);
     if(response_code!=SYN_ACK) {
@@ -144,11 +143,11 @@ IPAddress Communication_protocols::receive_IP(const Command_enum command, const 
             return IP;
         }
 
-        if(get_response(command)!=SYN_ACK) {
+        if(get_response(command)!=READY_TO_SEND) {
             close_session(command);
             return IP;
         }
-        send_response_ACK(command);
+        send_response_READY_TO_RECV(command);
 
         if(!wait_for_response(command)) return IP;
         const byte size = Serial1.read();
@@ -183,7 +182,6 @@ COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Comman
     for (size_t i = 0; i < strlen(a); i++) {
         at[i] = static_cast<uint8_t>(a[i]);
     }
-    constexpr byte max_retries= 10;
     byte current_retries = 0;
     while(current_retries<max_retries) {
         if(current_retries>0) send_request_RETRY(command);
@@ -192,8 +190,8 @@ COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Comman
         response_code = sendLong(CRC32.crc32(at ,strlen(a)), command);
         if(response_code!=SUCCESS) return response_code;
 
-        response_code = send_response_SYN_ACK(command,false);
-        if(response_code!=ACK) return response_code;
+        response_code = send_response_READY_TO_SEND(command,false);
+        if(response_code!=READY_TO_RECV) return response_code;
         Serial1.write(strlen(a));
         for(size_t i=0;i<strlen(a);i++)
             Serial1.write(at[i]);
@@ -216,6 +214,10 @@ COMM_PROTOCOL Communication_protocols::get_response(const Command_enum command, 
                 return ACK;
             }if(getProtocol(response_header)==SYN_ACK) {
                 return SYN_ACK;
+            }if(getProtocol(response_header)==READY_TO_RECV) {
+                return READY_TO_RECV;
+            }if(getProtocol(response_header)==READY_TO_SEND) {
+                return READY_TO_SEND;
             }if(getProtocol(response_header)==RETRY) {
                 return RETRY;
             }if(getProtocol(response_header)==FIN) {
@@ -258,9 +260,17 @@ COMM_PROTOCOL Communication_protocols::send_response_SYN_ACK(const Command_enum 
     send_header(command , SYN_ACK);
     return get_response(command, clear_buffer);
 }
+COMM_PROTOCOL Communication_protocols::send_response_READY_TO_SEND(const Command_enum command, const bool clear_buffer) {
+    send_header(command , READY_TO_SEND);
+    return get_response(command, clear_buffer);
+}
+void Communication_protocols::send_response_READY_TO_RECV(const Command_enum command) {
+    send_header(command , READY_TO_RECV);
+}
 void Communication_protocols::send_response_ACK(const Command_enum command) {
     send_header(command , ACK);
 }
+
 void Communication_protocols::send_request_SYN(const Command_enum command) {
     send_header(command , SYN);
 }
@@ -290,7 +300,6 @@ void Communication_protocols::clear_receive_buffer() {
     while(Serial1.available()>0)Serial1.read();
 }
 
-
 byte *Communication_protocols::longToByte(const unsigned long long_) {
     const auto a_arr = new byte[4]  {
         static_cast<byte>(long_ >> 24),
@@ -308,32 +317,6 @@ unsigned long Communication_protocols::bytesToLong(const byte *byte_) {
         (static_cast<long>(byte_[3]));
 }
 
-void Communication_protocols::printlnProtocol(const COMM_PROTOCOL res_code) {
-    printProtocol(res_code);
-    Serial.println();
-}
-void Communication_protocols::printProtocol(const COMM_PROTOCOL res_code) {
-    if(res_code==SYN)
-        Serial.println("SYN");
-    else if(res_code==SYN_ACK)
-        Serial.println("SYN_ACK");
-    else if(res_code==ACK)
-        Serial.println("ACK");
-    else if(res_code==FIN)
-        Serial.println("FIN");
-    else if(res_code==RETRY)
-        Serial.println("RETRY");
-    else if(res_code==TIMEOUT)
-        Serial.println("TIMEOUT");
-    else if(res_code==UNKW_ERR)
-        Serial.println("UNKW_ERR");
-    else if(res_code==SUCCESS)
-        Serial.println("SUCCESS");
-    else if(res_code==PROTOCOL_FILTER)
-        Serial.println("PROTOCOL_FILTER");
-    else
-        Serial.println("INVALID PROTOCOL FORMAT");
-}
 void Communication_protocols::printBin(const byte aByte) {
     Serial.print('(');
     for (int8_t aBit = 7; aBit >= 0; aBit--) {
@@ -347,27 +330,6 @@ void Communication_protocols::printlnBin(const byte aByte) {
     Serial.println();
 }
 
-COMM_PROTOCOL Communication_protocols::byte_to_enum(const byte protocol_id) {
-    if(protocol_id==SYN)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==SYN_ACK)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==ACK)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==FIN)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==RETRY)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==TIMEOUT)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==UNKW_ERR)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==SUCCESS)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    if(protocol_id==PROTOCOL_FILTER)
-        return static_cast<COMM_PROTOCOL>(protocol_id);
-    return UNKW_ERR;
-}
 byte Communication_protocols::extractHour(const String &formated_time) {
     return formated_time.substring(0, 2).toInt();
 }
@@ -388,7 +350,12 @@ void Communication_protocols::invert_stat_led() {
 void Communication_protocols::printHeader(const byte header) {
     Serial.print(command_as_String(getCommand(header)));
     Serial.print(" : ");
-    Serial.print(protocol_as_String(getProtocol(header)));
+    const String protocol_name = protocol_as_String(getProtocol(header));
+    Serial.print(protocol_name);
+    if(protocol_as_String(0b00000111)==protocol_name) {
+        Serial.print(" ");
+        printBin(header);
+    }
     Serial.println();
 }
 
@@ -399,6 +366,10 @@ String Communication_protocols::protocol_as_String(const byte comm_protocol) {
         return "SYN_ACK";
     }if(comm_protocol==ACK) {
         return "ACK";
+    }if(comm_protocol==READY_TO_RECV) {
+        return "READY_TO_RECV";
+    }if(comm_protocol==READY_TO_SEND) {
+        return "READY_TO_SEND";
     }if(comm_protocol==FIN) {
         return "FIN";
     }if(comm_protocol==UNKW_ERR) {
@@ -422,6 +393,8 @@ String Communication_protocols::command_as_String(const byte command) {
         return "ACT_AP";
     }if(command == DEACTIVATE_AP) {
         return "DCT_AP";
+    }if(command == GET_NETWORK_INF) {
+        return "GET_NETWORK_INF";
     }
     return "unknown_command";
 }
