@@ -51,7 +51,6 @@ public:
     static void printBin(byte aByte);
     static void printlnBin(byte aByte);
 
-    static void invert_stat_led();
 };
 
 

@@ -1,6 +1,7 @@
 #include "CommunicationHandler.h"
 
 #include <Command_activate_AP.h>
+#include <Command_daylight_sav.h>
 #include <Command_deactivate_ap.h>
 #include <Command_get_network_inf.h>
 #include <Command_get_reminderB.h>
@@ -22,9 +23,10 @@ extern Command_get_reminderB command_get_reminder_b;
 extern Command_activate_AP command_activate_AP;
 extern Command_deactivate_ap command_deactivate_ap;
 extern Command_get_network_inf command_get_network_inf;
+extern Command_daylight_sav command_daylight_sav;
 
-constexpr byte commands_size=5;
-Command *commands[commands_size]= {&command_get_time, &command_get_reminder_b,&command_activate_AP,&command_deactivate_ap, &command_get_network_inf}; // NOLINT(*-slicing, *-interfaces-global-init)
+constexpr byte commands_size=6;
+Command *commands[commands_size]= {&command_get_time, &command_get_reminder_b, &command_activate_AP, &command_deactivate_ap, &command_get_network_inf, &command_daylight_sav}; // NOLINT(*-slicing, *-interfaces-global-init)
 
 
 void CommunicationHandler::handle_header(const byte response_header) {
@@ -68,9 +70,9 @@ void CommunicationHandler::handle_communications() {
             }
         }
     }
-    // if(millis()-command_get_time.last_millis>command_get_time.retry_interval) {
-    //     command_get_time.send_request();
-    // }
+    if(millis()-command_get_time.last_millis>command_get_time.retry_interval) {
+        command_get_time.send_request();
+    }
 }
 
 bool CommunicationHandler::get_network_inf_request_handler() {
@@ -172,20 +174,17 @@ bool CommunicationHandler::deactivate_AP_response_handler() {
     network_info.set_needs_update();
     return true;
 }
-
 bool CommunicationHandler::deactivate_AP_request_handler()  {
     Serial.println("DCT_AP REQ_H");
     constexpr Command_enum command = DEACTIVATE_AP;
     if(send_response_SYN_ACK(command)!=ACK) {
         network_info.set_needs_update();
         return false;
-    };
+    }
     send_status_SUCCESS(command);
     network_info.set_needs_update();
     return true;
 }
-
-
 bool CommunicationHandler::activate_AP_response_handler()  {
     Serial.println("ACT_AP RES_H");
     constexpr Command_enum command=ACTIVATE_AP;
@@ -209,23 +208,41 @@ bool CommunicationHandler::activate_AP_response_handler()  {
 }
 
 
+bool CommunicationHandler::daylight_sav_response_handler(const bool daylight_sav) {
+    Serial.println("DLT_SV RES_H");
+    constexpr Command_enum command=DAYLIGHT_SAV;
+
+    send_response_ACK(command);
+    const COMM_PROTOCOL response_code = send_response_READY_TO_SEND(command);
+    if(response_code!=READY_TO_RECV) return false;
+    if(daylight_sav)
+        Serial1.write(153);
+    else
+        Serial1.write(102);
+    if(get_response(command)!=SUCCESS)
+        return false;
+    return true;
+
+}
+
+
+
 bool CommunicationHandler::NTP_response_handler()  {
     Serial.println("NTP RES_H");
     constexpr Command_enum command = GET_TIME;
     send_response_ACK(command);
     const unsigned long value = receive_long(command);
     if(value) {
-        send_status_SUCCESS(command);
         setTime(value);
+        send_status_SUCCESS(command);
         return true;
     }
     return false;
 }
 void CommunicationHandler::setTime(const unsigned long ux_time) {
-    invert_stat_led();
+    rtc.adjust(DateTime(ux_time));
     Serial.print("Time : ");
     Serial.println(ux_time);
-    rtc.adjust(DateTime(ux_time));
 }
 
 void CommunicationHandler::resend_command_get_reminder_B() {
@@ -234,6 +251,9 @@ void CommunicationHandler::resend_command_get_reminder_B() {
 }
 void CommunicationHandler::send_command_get_time() {
     send_request_SYN(GET_TIME);
+}
+void CommunicationHandler::send_command_daylight_sav() {
+    send_request_SYN(DAYLIGHT_SAV);
 }
 void CommunicationHandler::send_command_get_network_inf() {
     send_request_SYN(GET_NETWORK_INF);

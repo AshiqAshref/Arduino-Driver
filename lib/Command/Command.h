@@ -26,6 +26,7 @@ enum Command_enum:byte {
     ACTIVATE_AP =       0b00000100,
     DEACTIVATE_AP =     0b00000010,
     GET_NETWORK_INF =   0b00000011,
+    DAYLIGHT_SAV =      0b00001011,
     COMMAND_FILTER =    0b00001111
 };
 
@@ -84,7 +85,8 @@ public:
  *  1) Add command to Command_enum and assign a bite to it                         *
  *  2) create a class and pass new command_enum in constructor                     *
  *  3) Add command_enum to Communication_protocols::command_as_String()            *
- *  4) create send_request, request_handler and response_handler for the command.  *
+ *  4) create send_request, request_handler and response_handler for the command   *
+ *      in command handler.                                                        *
  *  5) declare and initialise the new Command class in main                        *
  *  6) extend the command declaration in CommunicationHandler                      *
  *  7) add command to CommunicationHandler::commands array.                        *

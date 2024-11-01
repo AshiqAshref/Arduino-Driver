@@ -5,8 +5,8 @@
 
 constexpr byte max_retries=20;
 COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc, const Command_enum command) {
-    COMM_PROTOCOL response_code = send_response_SYN_ACK(command);
-    if(response_code!=ACK) return response_code;
+    COMM_PROTOCOL response_code = send_response_READY_TO_SEND(command);
+    if(response_code!=READY_TO_RECV) return response_code;
 
     byte current_retries = 0;
     while(current_retries<max_retries) {
@@ -31,8 +31,8 @@ COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc,
 JsonDocument Communication_protocols::receive_jsonDocument(const Command_enum command) {
     JsonDocument doc;
     COMM_PROTOCOL response_code = get_response(command);
-    if(response_code!=SYN_ACK) return doc;
-    send_response_ACK(command);
+    if(response_code!=READY_TO_SEND) return doc;
+    send_response_READY_TO_RECV(command);
 
     byte current_retries = 0;
     while(current_retries<max_retries) {
@@ -68,8 +68,8 @@ JsonDocument Communication_protocols::receive_jsonDocument(const Command_enum co
     return doc;
 }
 COMM_PROTOCOL Communication_protocols::sendLong(const unsigned long res_long, const Command_enum command) {
-    const COMM_PROTOCOL rescode = send_response_SYN_ACK(command);
-    if(rescode!=ACK) return rescode;
+    const COMM_PROTOCOL rescode = send_response_READY_TO_SEND(command);
+    if(rescode!=READY_TO_RECV) return rescode;
 
     byte current_retries = 0;
     while(current_retries<max_retries) {
@@ -90,8 +90,8 @@ COMM_PROTOCOL Communication_protocols::sendLong(const unsigned long res_long, co
 }
 unsigned long Communication_protocols::receive_long(const Command_enum command) {
     COMM_PROTOCOL rescode = get_response(command);
-    if(rescode!=SYN_ACK) return 0;
-    send_response_ACK(command);
+    if(rescode!=READY_TO_SEND) return 0;
+    send_response_READY_TO_RECV(command);
 
     byte current_retries = 0;
     while(current_retries<max_retries) {
@@ -117,14 +117,13 @@ unsigned long Communication_protocols::receive_long(const Command_enum command) 
     send_status_TIMEOUT(command);
     return 0;
 }
-
 IPAddress Communication_protocols::receive_IP(const Command_enum command) {
     Serial.println("RECV_IP");
     IPAddress IP;
     COMM_PROTOCOL response_code = get_response(command);
-    if(response_code!=SYN_ACK) {
+    if(response_code!=READY_TO_SEND) {
         return IP;
-    }send_response_ACK(command);
+    }send_response_READY_TO_RECV(command);
 
     byte current_retries = 0;
     while(current_retries<max_retries) {
@@ -173,8 +172,8 @@ IPAddress Communication_protocols::receive_IP(const Command_enum command) {
     return IP;
 }
 COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Command_enum command) {
-    COMM_PROTOCOL response_code = send_response_SYN_ACK(command);
-    if(response_code!=ACK) return response_code;
+    COMM_PROTOCOL response_code = send_response_READY_TO_SEND(command);
+    if(response_code!=READY_TO_RECV) return response_code;
 
     const String ip = IP.toString();
     const auto a = ip.c_str();
@@ -336,15 +335,7 @@ byte Communication_protocols::extractHour(const String &formated_time) {
 byte Communication_protocols::extractMinute(const String &formated_time) {
     return formated_time.substring(3, 5).toInt();
 }
-bool status_led_state_ = false;
-void Communication_protocols::invert_stat_led() {
-    constexpr byte STAT_LED_PIN=52;
-    if(status_led_state_)
-        digitalWrite(STAT_LED_PIN,HIGH);
-    else
-        digitalWrite(STAT_LED_PIN,LOW);
-    status_led_state_=!status_led_state_;
-}
+
 
 
 void Communication_protocols::printHeader(const byte header) {
@@ -395,6 +386,8 @@ String Communication_protocols::command_as_String(const byte command) {
         return "DCT_AP";
     }if(command == GET_NETWORK_INF) {
         return "GET_NETWORK_INF";
+    }if(command == DAYLIGHT_SAV) {
+        return "DAYLIGHT_SAV";
     }
     return "unknown_command";
 }

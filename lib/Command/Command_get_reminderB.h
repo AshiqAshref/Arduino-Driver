@@ -19,7 +19,6 @@ public:
     void set_next_reminder_time_key(const unsigned long next_reminder_time_key_) {this->next_reminder_time_key_=next_reminder_time_key_;}
     void send_request(const unsigned long next_reminder_time_key){
         this->next_reminder_time_key_ = next_reminder_time_key;
-        this->set_status(IN_PROGRESS);
         this->send_request_();
     }
     void response_handler() override {

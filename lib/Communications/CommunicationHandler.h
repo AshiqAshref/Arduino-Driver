@@ -40,6 +40,9 @@ public:
     static bool get_network_inf_response_handler();
     static bool get_network_inf_request_handler();
 
+    static void send_command_daylight_sav();
+    static bool daylight_sav_response_handler(bool daylight_sav);
+
     static bool activate_AP_response_handler();
     static bool NTP_response_handler();
 

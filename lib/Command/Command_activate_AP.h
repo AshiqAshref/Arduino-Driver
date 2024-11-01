@@ -8,7 +8,7 @@
 
 
 
-class Command_activate_AP: public Command {
+class Command_activate_AP final : public Command {
 public:
     Command_activate_AP(void(*send_request)(), bool(*response_handler)(),
                         bool(*request_handler)(), const unsigned long retry_interval_on_fail)

@@ -15,6 +15,7 @@
 #include <Command_get_time.h>
 #include <LiquidCrystal_I2C.h>
 #include <Blink_Array.h>
+#include <Command_daylight_sav.h>
 #include <Command_get_network_inf.h>
 #include <CommunicationHandler.h>
 #include <Lcd_Menu.h>
@@ -70,7 +71,11 @@ auto command_get_network_inf = Command_get_network_inf(
         CommunicationHandler::get_network_inf_response_handler,
         CommunicationHandler::get_network_inf_request_handler,
         2000);
-
+auto command_daylight_sav = Command_daylight_sav(
+        CommunicationHandler::send_command_daylight_sav,
+        CommunicationHandler::daylight_sav_response_handler,
+        [](){return true;},
+        60000);
 
 RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -110,6 +115,8 @@ void loop() {
             Serial.println("ALARM");
         print_lcd_time(current_time,12);
         Sensor_unit::check_if_any_box_open();
+        DateTime d;
+        d.
 
     }
     // if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB.isValid()) {
