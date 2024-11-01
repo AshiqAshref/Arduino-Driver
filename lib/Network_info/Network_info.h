@@ -5,15 +5,16 @@
 #ifndef NETWORK_INFO_H
 #define NETWORK_INFO_H
 #include <IPAddress.h>
-
 class Network_info {
     bool AP_active=false;
     bool wifi_active=false;
     bool isConnected = false;
     bool needs_updating = true;
+    bool daylight_saving_ = false;
+    void (*adjust_daylight_saving)(bool);
     IPAddress IP;
 public:
-    Network_info()=default;
+    explicit Network_info(void (*adjust_daylight_saving)(bool)):adjust_daylight_saving(adjust_daylight_saving){}
     bool is_ap_active() const {return this->AP_active;}
     bool is_wifi_active() const {return this->wifi_active;}
     bool connected() const {return this->isConnected;}
@@ -46,7 +47,15 @@ public:
         this->IP = IPAddress();
         this->needs_updating=false;
     }
-
+    bool daylight_saving() const {
+        return this->daylight_saving_;
+    }
+    void set_daylight_saving(const bool new_dls) {
+        const bool cur_dls = this->daylight_saving_;
+        if(new_dls != cur_dls)
+            adjust_daylight_saving(new_dls);
+        this->daylight_saving_ = new_dls;
+    }
 
 
     IPAddress get_IP() {
@@ -56,6 +65,7 @@ public:
         return this->IP.toString();
     }
 };
+
 
 
 

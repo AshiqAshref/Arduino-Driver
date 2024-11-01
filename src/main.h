@@ -37,6 +37,7 @@ void initializePins();
 void addBoxes();
 String get_formated_Time(const DateTime &curr_time, byte mode = 24);
 String beautifyTime(uint8_t h_m_s);
+void adjust_daylight_saving(bool dls);
 
 unsigned long get_current_plain_unix_time();
 void print_lcd_time(const DateTime &current_time, byte mode=24);

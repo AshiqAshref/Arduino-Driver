@@ -204,33 +204,35 @@ COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Comman
 }
 
 COMM_PROTOCOL Communication_protocols::get_response(const Command_enum command, const bool clear_buffer)  {
-    if(!wait_for_response())
-        return TIMEOUT;
-    if(Serial1.available()) {
-        const byte response_header = Serial1.read();
-        if(getCommand(response_header)==command) {
-            if(getProtocol(response_header)==ACK) {
-                return ACK;
-            }if(getProtocol(response_header)==SYN_ACK) {
-                return SYN_ACK;
-            }if(getProtocol(response_header)==READY_TO_RECV) {
-                return READY_TO_RECV;
-            }if(getProtocol(response_header)==READY_TO_SEND) {
-                return READY_TO_SEND;
-            }if(getProtocol(response_header)==RETRY) {
-                return RETRY;
-            }if(getProtocol(response_header)==FIN) {
-                return FIN;
-            }if(getProtocol(response_header)==SUCCESS) {
-                return SUCCESS;
-            }if(getProtocol(response_header)==TIMEOUT) {
-                return TIMEOUT;
-            }
+    COMM_PROTOCOL protocol = UNKW_ERR;
+    if(!wait_for_response(command)) return TIMEOUT;
+    const byte response_header = Serial1.read();
+    if(getCommand(response_header)==command) {
+        const byte byte_protocol = getProtocol(response_header);
+        if(byte_protocol==ACK) {
+            protocol = ACK;
+        }else if(byte_protocol==SYN_ACK) {
+            protocol = SYN_ACK;
+        }else if(byte_protocol==READY_TO_RECV) {
+            protocol = READY_TO_RECV;
+        }else if(byte_protocol==READY_TO_SEND) {
+            protocol = READY_TO_SEND;
+        }else if(byte_protocol==RETRY) {
+            protocol = RETRY;
+        }else if(byte_protocol==FIN) {
+            protocol = FIN;
+        }else if(byte_protocol==SUCCESS) {
+            protocol = SUCCESS;
+        }else if(byte_protocol==TIMEOUT) {
+            protocol = TIMEOUT;
         }
-        if(clear_buffer) clear_receive_buffer();
     }
-    return UNKW_ERR;
+    if(clear_buffer) clear_receive_buffer();
+    Serial.print("RCV: ");
+    Serial.println(protocol_as_String(protocol));
+    return protocol;
 }
+
 bool Communication_protocols::wait_for_response() {
     const unsigned long time_out_start = millis();
     while(!Serial1.available())

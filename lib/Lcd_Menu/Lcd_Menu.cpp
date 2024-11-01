@@ -5,6 +5,7 @@
 #include <BUTTON_PINS.h>
 #include <Command_deactivate_ap.h>
 #include <Command_activate_ap.h>
+#include <Command_daylight_sav.h>
 #include <Command_get_network_inf.h>
 #include <LiquidCrystal_I2C.h>
 #include <Network_info.h>
@@ -14,6 +15,7 @@ extern Command_activate_AP command_activate_AP;
 extern Command_deactivate_ap command_deactivate_ap;
 extern Command_get_network_inf command_get_network_inf;
 extern Network_info network_info;
+extern Command_daylight_sav command_daylight_sav;
 
 
 
@@ -137,8 +139,8 @@ void Lcd_Menu::menuPage(){
 
 
 void Lcd_Menu::setupPage(){
-  constexpr byte total_menu_items=2;
-  const String menu_items[total_menu_items] = {"ip address", "Back"};
+  constexpr byte total_menu_items=3;
+  const String menu_items[total_menu_items] = {"daylight_sav","ip address", "Back"};
   byte current_menu_item=0;
   printOptions(menu_items,total_menu_items,current_menu_item);
 
@@ -155,7 +157,8 @@ void Lcd_Menu::setupPage(){
         if(current_menu_item>total_menu_items-1) current_menu_item=0;
         printOptions(menu_items,total_menu_items,current_menu_item);
       }else if(button==BUTTON_ENTER) {
-        if(current_menu_item == 0) changeIpPage();
+        if(current_menu_item == 0) {dls_page(); exit = true;}
+        else if(current_menu_item == 1) changeIpPage();
         else if(current_menu_item==total_menu_items-1) exit = true;
         printOptions(menu_items,total_menu_items,current_menu_item);
       }
@@ -163,6 +166,17 @@ void Lcd_Menu::setupPage(){
   }
 }
 
+
+void Lcd_Menu::dls_page() {
+  const bool new_dls = confirm("Daylight Save","acvt?", network_info.daylight_saving());
+  network_info.set_daylight_saving(new_dls);
+  command_daylight_sav.send_request(network_info.daylight_saving());
+
+  lcd.clear();
+  printCenter("OK",0);
+  delay(700);
+  lcd.clear();
+}
 
 
 void Lcd_Menu::network_page() {
@@ -330,7 +344,7 @@ void Lcd_Menu::setSubnetPage(byte * temp_SYS_SB) {
     printCenter("INVALID SUBNET", 0);
     return;
   }
-  if(confirm(temp_SYS_SB)){
+  if(confirm(get_IP_as_string(temp_SYS_SB), "Confirm?")){
     for(int i=0;i<4;i++)
       SYSTEM_SB[i]=temp_SYS_SB[i];
 }
@@ -342,7 +356,7 @@ void Lcd_Menu::setIpPage(byte * temp_SYS_IP) {
     printCenter("INVALID IP", 0);
     return;
   }
-  if(confirm(temp_SYS_IP)){
+  if(confirm(get_IP_as_string(temp_SYS_IP),"Confirm?")){
     for(int i=0;i<4;i++)
       SYSTEM_IP[i]=temp_SYS_IP[i];
   }
@@ -417,35 +431,40 @@ void Lcd_Menu::lcd_print_ip_big(const byte x, const byte y, const byte *IP_big) 
   lcd.print(get_IP_big_as_string(IP_big));
 }
 
-bool currentState = true;
-unsigned long blinkTime=0;
+bool lcd_menu_var_currentState = true;
+unsigned long lcd_menu_var_blinkTime=0;
 void Lcd_Menu::blink_cursor(const byte x, const byte y) {
-  if(millis()-blinkTime>=300){
-    if(currentState){
+  if(millis()-lcd_menu_var_blinkTime>=300){
+    if(lcd_menu_var_currentState){
       lcd.setCursor(x, y);
       lcd.write(0);
     }else{
       lcd.setCursor(x, y);
       lcd.write(1);
     }
-    currentState=!currentState;
-    blinkTime=millis();
+    lcd_menu_var_currentState=!lcd_menu_var_currentState;
+    lcd_menu_var_blinkTime=millis();
   }
 }
 
 
+boolean Lcd_Menu::confirm(const String &confirm_object, const String &confirm_message, const bool start_with)  {
+    lcd.clear();
+    void(*print_confirm_message)(bool, const String&) = [](const bool state, const String& message_) {
+      state?
+        printCenter(message_ + " >Y  N",1):
+        printCenter(message_ + "  Y >N",1);
+  };
 
-boolean Lcd_Menu::confirm(const byte *iP)  {
-  lcd.clear();
-  printCenter(get_IP_as_string(iP),0);
-  boolean confirmFlag=false;
-  print_confirm_message(confirmFlag);
+  printCenter(confirm_object,0);
+  boolean confirmFlag=start_with;
+  print_confirm_message(confirmFlag,confirm_message);
 
   while(true){
     const uint8_t button = checkForButtonPress(horizontal_button_config, buttons_horizontal_size);
     if(button == BUTTON_LEFT || button == BUTTON_RIGHT) {
       confirmFlag = !confirmFlag;
-      print_confirm_message(confirmFlag);
+      print_confirm_message(confirmFlag,confirm_message);
     }else if(button==BUTTON_ENTER) {
       return confirmFlag;
     }
@@ -457,12 +476,12 @@ void Lcd_Menu::lcd_clear_block(const byte x, const byte y) {
   lcd.setCursor(x,y);
   lcd.write(1);
 }
-void Lcd_Menu::print_confirm_message(const bool state) {
-  if(state)
-    printCenter("Confirm? >Y  N",1);
-  else
-    printCenter("Confirm?  Y >N",1);
-}
+// void Lcd_Menu::print_confirm_message(const bool state) {
+//   if(state)
+//     printCenter("Confirm? >Y  N",1);
+//   else
+//     printCenter("Confirm?  Y >N",1);
+// }
 
 
 String Lcd_Menu::get_IP_big_as_string(const byte *a){

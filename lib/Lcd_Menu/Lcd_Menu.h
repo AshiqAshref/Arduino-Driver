@@ -34,7 +34,10 @@ static void ap_status_Page();
     static void network_page();
 
 static void setupPage();
-    static void showIpPage() ;
+
+static void dls_page();
+
+static void showIpPage() ;
     static void changeIpPage();
 
 static bool checkIPAddrValid(const byte *ip_small);
@@ -51,7 +54,7 @@ static void setIpPage(byte *temp_SYS_IP);
     static uint8_t checkForButtonPress(const uint8_t * buttons, uint8_t size);
     static uint8_t checkForButtonPress(uint8_t button);
 
-    static boolean confirm(const byte *iP) ;
+    static boolean confirm(const String &confirm_object, const String &confirm_message, bool start_with=false) ;
 
 
 
@@ -63,7 +66,7 @@ static String get_IP_as_string(const byte *a);
 static byte calculate_cursor_position(byte dataPos);
 
 static void lcd_print_ip_big(byte x, byte y, const byte *IP_big);
-static void print_confirm_message(bool state);
+// static void print_confirm_message(bool state);
 static void printOptions(const String *a, uint8_t size, uint8_t index);
 static void printCenter(const String &a, uint8_t column);
 static void printLeft(const String &a, uint8_t column);

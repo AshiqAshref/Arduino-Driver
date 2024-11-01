@@ -46,7 +46,7 @@ protected:
 public:
     unsigned long last_millis=0;
     bool (*response_handler_)();
-    bool (*request_handler)();
+    bool (*request_handler_)();
     unsigned long retry_interval;
 
     Command(const Command_enum command, void(*send_request_)(), bool(*response_handler)(), bool(*request_handler)(),
@@ -54,7 +54,7 @@ public:
         : command_(command),
           send_request_(send_request_),
           response_handler_(response_handler),
-          request_handler(request_handler),
+          request_handler_(request_handler),
           retry_interval(retry_interval) {
     }
 
@@ -62,6 +62,9 @@ public:
     void send_request(){
         this->set_status(IN_PROGRESS);
         this->send_request_();
+    }
+    virtual void request_handler(){
+        this->request_handler_();
     }
 
     virtual void set_status(const CommandStatus status) {

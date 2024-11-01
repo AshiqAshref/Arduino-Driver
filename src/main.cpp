@@ -1,30 +1,25 @@
 // #include <AV_Functions.h>
 #include "Main.h"
+#include <LiquidCrystal_I2C.h>
+#include <RTClib.h>
+
 #include <Led_indicator.h>
 #include <Mech_Arm.h>
-// #include <COLOR.h>
-
-// #include <Led_Coordinate.h>
-// #include <SoftwareSerial.h>
 #include <BUTTON_PINS.h>
 #include <AV_PINS.h>
-// #include <ArduinoJson.h>
+#include <Blink_Array.h>
+#include <CommunicationHandler.h>
+#include <Lcd_Menu.h>
+#include <ReminderB.h>
+#include <Network_info.h>
+#include <sensor_unit.h>
+#include <Status_Directive.h>
 #include <Command_activate_AP.h>
 #include <Command_deactivate_ap.h>
 #include <Command_get_reminderB.h>
 #include <Command_get_time.h>
-#include <LiquidCrystal_I2C.h>
-#include <Blink_Array.h>
 #include <Command_daylight_sav.h>
 #include <Command_get_network_inf.h>
-#include <CommunicationHandler.h>
-#include <Lcd_Menu.h>
-#include <Network_info.h>
-#include <sensor_unit.h>
-#include <Status_Directive.h>
-#include <RTClib.h>
-#include <ReminderB.h>
-// #include <AV_Functions.h>
 
 constexpr byte box_size = 16;
 Box boxes[box_size] = {
@@ -74,8 +69,9 @@ auto command_get_network_inf = Command_get_network_inf(
 auto command_daylight_sav = Command_daylight_sav(
         CommunicationHandler::send_command_daylight_sav,
         CommunicationHandler::daylight_sav_response_handler,
-        [](){return true;},
-        60000);
+        CommunicationHandler::daylight_sav_request_handler,
+        10000);
+
 
 RTC_DS1307 rtc;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -85,7 +81,7 @@ auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
 auto upcommingReminderB=  ReminderB();
-auto network_info= Network_info();
+auto network_info= Network_info(adjust_daylight_saving);
 
 
 
@@ -115,8 +111,6 @@ void loop() {
             Serial.println("ALARM");
         print_lcd_time(current_time,12);
         Sensor_unit::check_if_any_box_open();
-        DateTime d;
-        d.
 
     }
     // if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB.isValid()) {
@@ -159,6 +153,12 @@ String beautifyTime(const uint8_t h_m_s) {
         return '0'+static_cast<String>(h_m_s);
     return static_cast<String>(h_m_s);
 }
+void adjust_daylight_saving(const bool dls) {
+    dls?
+        rtc.adjust(DateTime(rtc.now().unixtime()+3600)):
+        rtc.adjust(DateTime(rtc.now().unixtime()-3600));
+}
+
 
 // void addBoxes() {
 //     String json = R"(
