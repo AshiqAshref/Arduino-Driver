@@ -172,10 +172,14 @@ IPAddress Communication_protocols::receive_IP(const Command_enum command) {
     return IP;
 }
 COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Command_enum command) {
+    Serial.println("SND_IP");
     COMM_PROTOCOL response_code = send_response_READY_TO_SEND(command);
     if(response_code!=READY_TO_RECV) return response_code;
+    String ip;
+    IP.toString()=="0.0.0.0"?
+        ip = "1.1.1.1":
+        ip = IP.toString();
 
-    const String ip = IP.toString();
     const auto a = ip.c_str();
     uint8_t at[strlen(a)];
     for (size_t i = 0; i < strlen(a); i++) {
@@ -187,16 +191,23 @@ COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Comman
 
         FastCRC32 CRC32;
         response_code = sendLong(CRC32.crc32(at ,strlen(a)), command);
-        if(response_code!=SUCCESS) return response_code;
+        if(response_code!=SUCCESS) {
+            return response_code;
+        }
 
         response_code = send_response_READY_TO_SEND(command,false);
-        if(response_code!=READY_TO_RECV) return response_code;
+        if(response_code!=READY_TO_RECV) {
+            return response_code;
+        }
+
         Serial1.write(strlen(a));
         for(size_t i=0;i<strlen(a);i++)
             Serial1.write(at[i]);
 
         response_code=get_response(command);
-        if(response_code != RETRY) return response_code;
+        if(response_code != RETRY) {
+            return response_code;
+        }
         current_retries++;
     }
     send_status_TIMEOUT(command);
@@ -229,7 +240,7 @@ COMM_PROTOCOL Communication_protocols::get_response(const Command_enum command, 
     }
     if(clear_buffer) clear_receive_buffer();
     Serial.print("RCV: ");
-    Serial.println(protocol_as_String(protocol));
+    printHeader((command | protocol));
     return protocol;
 }
 
@@ -390,10 +401,15 @@ String Communication_protocols::command_as_String(const byte command) {
         return "GET_NETWORK_INF";
     }if(command == DAYLIGHT_SAV) {
         return "DAYLIGHT_SAV";
+    }if(command == SERVER_IP) {
+        return "SERVER_IP";
+    }if(command == REMINDERB_CH) {
+        return "REMINDERB_CH";
+    }if(command == REMINDERB_SND_LOG) {
+        return "REMINDERB_SND_LOG";
     }
     return "unknown_command";
 }
-
 
 
 

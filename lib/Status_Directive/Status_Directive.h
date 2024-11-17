@@ -5,14 +5,22 @@
 #ifndef STATUS_DIRECTIVE_H
 #define STATUS_DIRECTIVE_H
 #include <Arduino.h>
-#include <Status.h>
-
+enum BoxStatus {
+    BOX_STATUS_DEFAULT,
+    BOX_STATUS_CURRENT,
+    BOX_STATUS_REMOVED,
+    BOX_STATUS_UPCOMMING,
+    BOX_STATUS_MISSED,
+    BOX_STATUS_EMPTY,
+    BOX_STATUS_NOT_IN_USE,
+    BOX_STATUS_RUNNING_LOW
+};
 
 class Status_Directive {
 public:
     Status_Directive()=default;
 
-    static void set_mode(byte boxNo, Status status);
+    static void set_mode(byte boxNo, BoxStatus status);
 
     static void mode_default(byte boxNo);
     static void mode_current(byte boxNo);

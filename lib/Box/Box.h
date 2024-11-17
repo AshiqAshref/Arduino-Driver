@@ -1,14 +1,8 @@
-//
-// Created by user on 3/07/2024.
-//
-
 #ifndef BOX_H
 #define BOX_H
 #include <Arduino.h>
-#include <Blink_Array.h>
 #include <Led_Coordinate.h>
 #include <Pos_Coordinate.h>
-#include <Status.h>
 #include <Status_Directive.h>
 
 class Box {
@@ -20,7 +14,8 @@ class Box {
     String medicine_name_="";
     unsigned short medicine_amount_=0;
     boolean isOpen_=false;
-    Status status_ = DEFAULT_ ;
+    BoxStatus status_ = BOX_STATUS_DEFAULT ;
+
 public:
     Box();
     explicit Box(const byte box_no, const Pos_Coordinate &pos_coordinate)
@@ -39,7 +34,13 @@ public:
 
     byte box_no() const {return box_no_;}
     boolean isOpen() const {return isOpen_;}
-    void isOpen(boolean value) ;
+    void isOpen(boolean value) {
+        if(value)
+            Status_Directive::set_mode(this->box_no_, BOX_STATUS_REMOVED);
+        else if(this->isOpen_)
+            set_status(status_);
+        this->isOpen_=value;
+    }
     unsigned int med_id() const {return this->med_id_;}
     void set_med_id(const unsigned int med_id) {this->med_id_ = med_id;}
 
@@ -49,8 +50,8 @@ public:
     unsigned short medicne_amount() const {return medicine_amount_;}
     void set_medicne_amount(unsigned short const medicne_amount) {this->medicine_amount_ = medicne_amount;}
 
-    Status &status() {return status_;}
-    void set_status(const Status status) {
+    BoxStatus &status() {return status_;}
+    void set_status(const BoxStatus status) {
         this->status_ = status;
         Status_Directive::set_mode(this->box_no_, status);
     }

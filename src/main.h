@@ -6,6 +6,7 @@
 #include <SPI.h>
 #include <Box.h>
 #include <Pos_Coordinate.h>
+#include <ReminderB.h>
 #include <RTClib.h>
 
 unsigned long xCordinate[16]={
@@ -35,12 +36,12 @@ byte STAT_LED_PIN = 52;
 void initializePins();
 
 void addBoxes();
-String get_formated_Time(const DateTime &curr_time, byte mode = 24);
+String get_formated_Time(const DateTime &curr_time, TimeMode mode = TIME_MODE_12);
 String beautifyTime(uint8_t h_m_s);
-void adjust_daylight_saving(bool dls);
 
-unsigned long get_current_plain_unix_time();
-void print_lcd_time(const DateTime &current_time, byte mode=24);
+unsigned long get_current_unix_time();
+void print_lcd_time(const DateTime &current_time, TimeMode mode=TIME_MODE_12);
+
 
 // void initializeBoxes();
 // void addReminders();

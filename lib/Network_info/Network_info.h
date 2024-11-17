@@ -9,61 +9,58 @@ class Network_info {
     bool AP_active=false;
     bool wifi_active=false;
     bool isConnected = false;
-    bool needs_updating = true;
+    bool needs_updating_ = true;
     bool daylight_saving_ = false;
-    void (*adjust_daylight_saving)(bool);
-    IPAddress IP;
+    bool server_needs_updating_ = true;
+    IPAddress esp_IP_;
+    IPAddress server_IP_= IPAddress(192,168,004,001);
+    IPAddress server_SB_= IPAddress(255,255,255,000);
 public:
-    explicit Network_info(void (*adjust_daylight_saving)(bool)):adjust_daylight_saving(adjust_daylight_saving){}
-    bool is_ap_active() const {return this->AP_active;}
+    Network_info()=default;
+    bool is_ap_active() const {return this->AP_active; }
     bool is_wifi_active() const {return this->wifi_active;}
     bool connected() const {return this->isConnected;}
     void set_ap_active(const IPAddress &ip_address) {
         this-> AP_active=true;
         this->wifi_active=false;
         this->isConnected=false;
-        this->IP = ip_address;
-        this->needs_updating=false;
+        this->esp_IP_ = ip_address;
+        this->needs_updating_=false;
     }
     void set_wifi_active(const IPAddress &ip_address) {
         this-> AP_active=false;
         this->wifi_active=true;
-        this->IP = ip_address;
+        this->esp_IP_ = ip_address;
         ip_address.toString() == "1.1.1.1"?
             this->isConnected=false:
             this->isConnected=true;
 
-        this->needs_updating=false;
+        this->needs_updating_=false;
     }
     void set_needs_update() {
         this->set_none_active();
-        this->needs_updating=true;
+        this->needs_updating_=true;
     }
-    bool needs_update() const {return this->needs_updating;}
+    bool needs_update() const {return this->needs_updating_;}
     void set_none_active() {
         this-> AP_active=false;
         this->wifi_active=false;
         this->isConnected=false;
-        this->IP = IPAddress();
-        this->needs_updating=false;
-    }
-    bool daylight_saving() const {
-        return this->daylight_saving_;
-    }
-    void set_daylight_saving(const bool new_dls) {
-        const bool cur_dls = this->daylight_saving_;
-        if(new_dls != cur_dls)
-            adjust_daylight_saving(new_dls);
-        this->daylight_saving_ = new_dls;
+        this->esp_IP_ = IPAddress();
+        this->needs_updating_=false;
     }
 
+    IPAddress server_IP(){return this->server_IP_;}
+    void set_server_IP(const IPAddress &server_IP){this->server_IP_=server_IP;}
 
-    IPAddress get_IP() {
-        return this->IP;
-    }
-    String get_ip_string() const {
-        return this->IP.toString();
-    }
+    IPAddress server_SB(){return this->server_SB_;}
+    void set_server_SB(const IPAddress &server_SB){this->server_SB_=server_SB;}
+
+    void set_daylight_saving(const bool new_dls) {this->daylight_saving_ = new_dls;}
+    bool daylight_saving() const {return this->daylight_saving_;}
+
+    IPAddress get_esp_IP() {return this->esp_IP_;}
+    String get_esp_IP_string() const {return this->esp_IP_.toString();}
 };
 
 

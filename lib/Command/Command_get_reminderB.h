@@ -19,7 +19,7 @@ public:
     void set_next_reminder_time_key(const unsigned long next_reminder_time_key_) {this->next_reminder_time_key_=next_reminder_time_key_;}
     void send_request(const unsigned long next_reminder_time_key){
         this->next_reminder_time_key_ = next_reminder_time_key;
-        this->send_request_();
+        Command::send_request();
     }
     void response_handler() override {
         if(this->response_handler_long_(this->next_reminder_time_key_)) {
@@ -27,6 +27,7 @@ public:
         }else
             this->set_status(FAILED);
     }
+
     Command_enum command() override {return this->command_;}
 
 

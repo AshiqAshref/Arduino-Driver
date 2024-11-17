@@ -1,18 +1,28 @@
 #ifndef AV_FUNCTIONS_H
 #define AV_FUNCTIONS_H
 #include <Arduino.h>
-#include <COLOR.h>
+#include <RTClib.h>
+#include <ArduinoJson.h>
 
 class AV_Functions {
 public:
     AV_Functions()=default;
     ~AV_Functions()=default;
-    static void beepFor(int time);
-    static void beepFor(int delay1, int delay2);
-    static void beepFor(int delay1, int delay2, byte repeat);
     static void waitForInput();
     static void flush_();
-    static COLOR char_to_enum(char a);
-    static char enum_to_char(COLOR color);
+
+    static String get_formated_Time(const DateTime &curr_time, byte mode=12);
+    static String beautifyTime(uint8_t h_m_s);
+    static void printBin(byte aByte);
+    static void printlnBin(byte aByte);
+    static JsonDocument simplify_Json(const JsonDocument &doc);
+
+    static bool isJsonValid(const JsonDocument &doc);
+
+    static JsonDocument unsimplify_Json(const JsonDocument &doc);
+
+    static byte extractHour(const String &formated_time);
+
+    static byte extractMinute(const String &formated_time);
 };
 #endif //AV_FUNCTIONS_H

@@ -1,50 +1,44 @@
-#ifndef COMMAND_DAYLIGHT_SAV_H
-#define COMMAND_DAYLIGHT_SAV_H
-
+#ifndef COMMAND_SERVER_IP_H
+#define COMMAND_SERVER_IP_H
 #define RES_GET true
 #define RES_SET false
 
 #include <Command.h>
+#include <IPAddress.h>
 
-class Command_daylight_sav final : public Command{
-    bool daylight_sav =false;
+class Command_server_ip final : public Command{
     bool command_type_ = RES_GET;
-    bool (*response_handler_bool)(bool,bool);
-
+    IPAddress server_ip;
+    bool (*response_handler_bool)(const IPAddress&, bool);
 public:
-    Command_daylight_sav(void(*send_request)(),
-        bool (*response_handler_bool)(bool,bool),
+    Command_server_ip(void(*send_request)(),
+        bool (*response_handler_bool)(const IPAddress&, bool),
         bool(*request_handler)(),
         const unsigned long retry_interval_on_fail
         ) : Command(
-                DAYLIGHT_SAV,
+                SERVER_IP,
                 send_request,
                 []{return true;},
                 request_handler,
                 retry_interval_on_fail
-                ),response_handler_bool(response_handler_bool)
-    {
-        this->Command::set_status(IN_PROGRESS);
-    }
+                ),response_handler_bool(response_handler_bool){}
 
     Command_enum command() override {return this->command_;}
     bool command_type() const {return this->command_type_;}
-    void send_request(const bool daylight_saving, const bool command_type=RES_GET){
+    void send_request(const IPAddress& server_ip, const bool command_type=RES_GET){
         this->command_type_=command_type;
-        this->daylight_sav=daylight_saving;
+        this->server_ip=server_ip;
         Command::send_request();
     }
 
     void response_handler() override {
-        if(this->response_handler_bool(this->daylight_sav, this->command_type_)) {
+        if(this->response_handler_bool(this->server_ip, this->command_type_)) {
             this->set_status(COMPLETED);
         }else
             this->set_status(FAILED);
     }
-
-
 };
 
 
 
-#endif //COMMAND_DAYLIGHT_SAV_H
+#endif //COMMAND_SERVER_IP_H

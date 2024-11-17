@@ -2,14 +2,21 @@
 #define LED_INDICATOR_UNIT_H
 #include <LedControl.h>
 #include <Arduino.h>
-#include <LED_ARRAY_PINS.h>
-#include <COLOR.h>
+#include <IO_PINS.h>
+
+enum COLOR:char{
+    COLOR_RED   = 'r',
+    COLOR_GREEN = 'g',
+    COLOR_BLUE  = 'b',
+    COLOR_CLEAR = 'c',
+};
+
 
 class Led_Indicator {
     LedControl boxLed = LedControl(
-     static_cast<byte>(LED_ARRAY_PINS::dataPin),
-     static_cast<byte>(LED_ARRAY_PINS::clkPin),
-     static_cast<byte>(LED_ARRAY_PINS::csPin),
+     LED_MATRIX_PIN_DATAIN,
+     LED_MATRIX_PIN_CLK,
+     LED_MATRIX_PIN_CS,
      2
    ); //(DIN, CLK, LOAD, no_of_chained_devices)
     unsigned long blinkPrevioustime=0;

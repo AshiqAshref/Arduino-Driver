@@ -2,7 +2,7 @@
 
 String Medicine::toString() const {
     return "{"
-                R"("box_no" : )" + box->toString() +
-                R"("dosage" : )" + static_cast<String>(dosage) +
+                R"("box_no" : )" + box_->toString() +
+                R"("dosage" : )" + static_cast<String>(dosage_) +
               "}";
 }

@@ -4,9 +4,11 @@
 
 #ifndef BLINK_H
 #define BLINK_H
+
 #include <Arduino.h>
-#include <AV_Functions.h>
-#include <COLOR.h>
+#include <Led_Indicator.h>
+
+
 
 
 class Blink {
@@ -15,7 +17,7 @@ class Blink {
     unsigned int delay_=500;
     byte boxNo_;
     COLOR color_a;
-    COLOR color_b=COLOR::CLEAR;
+    COLOR color_b=COLOR_CLEAR;
     bool color_single;
     void blink_ch() const;
     void blink_st() const;
@@ -56,8 +58,8 @@ public:
 
 
     String color() const {
-        if(color_single) return String(AV_Functions::enum_to_char(color_a));
-        return String(AV_Functions::enum_to_char(color_a))+String(AV_Functions::enum_to_char(color_b));
+        if(color_single) return String(static_cast<char>(color_a));
+        return String(static_cast<char>(color_a))+String(static_cast<char>(color_b));
     }
 
     void set_color(const COLOR color) {
@@ -73,12 +75,14 @@ public:
     unsigned int &get_delay() {return delay_;}
     void set_delay(const int delay) {this->delay_ = delay;}
 
+
     String toString() const  {
         return R"({)"
             R"(boxNo: )" + static_cast<String>(boxNo_) +
             R"( color: )" + color()+
                 "}";
     }
+
 };
 
 

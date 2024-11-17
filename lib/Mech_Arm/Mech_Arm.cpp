@@ -2,8 +2,9 @@
 
 #include <AV_Functions.h>
 #include <MultiStepper.h>
-#include <BUTTON_PINS.h>
-#include <STEPPER_PINS.h>
+#include <IO_PINS.h>
+#include <LiquidCrystal_I2C.h>
+
 // Z=1/2 step
 
 extern Led_Indicator led_indicator;
@@ -15,9 +16,9 @@ float zSpeed=1000;
 
 Mech_Arm::Mech_Arm() {
 // Mech_Arm::Mech_Arm(const Lcd_Menu &lcd_menu, Led_Indicator *led_indicator) {
-    stepperX = new AccelStepper(1, static_cast<uint8_t>(STEPPER_PINS::X_step_pin), static_cast<uint8_t>(STEPPER_PINS::X_dir_pin));
-    stepperY = new AccelStepper(1, static_cast<uint8_t>(STEPPER_PINS::Y_step_pin), static_cast<uint8_t>(STEPPER_PINS::Y_dir_pin));
-    stepperZ = new AccelStepper(1, static_cast<uint8_t>(STEPPER_PINS::Z_step_pin), static_cast<uint8_t>(STEPPER_PINS::Z_dir_pin));
+    stepperX = new AccelStepper(1, STEPPER_PIN_XSTEP, STEPPER_PIN_XDIR);
+    stepperY = new AccelStepper(1, STEPPER_PIN_YSTEP, STEPPER_PIN_YDIR);
+    stepperZ = new AccelStepper(1, STEPPER_PIN_ZSTEP, STEPPER_PIN_ZDIR);
 
     // this->lcd_menu = lcd_menu;
     // this->led_indicator = led_indicator;
@@ -26,10 +27,10 @@ Mech_Arm::Mech_Arm() {
 
 
 void Mech_Arm::initializeSteppers() const {
-    pinMode(static_cast<uint8_t>(STEPPER_PINS::xEnable), OUTPUT);
-    pinMode(static_cast<uint8_t>(STEPPER_PINS::yEnable), OUTPUT);
-    pinMode(static_cast<uint8_t>(STEPPER_PINS::zEnable), OUTPUT);
-    pinMode(static_cast<uint8_t>(STEPPER_PINS::zEnable), OUTPUT);
+    pinMode(STEPPER_PIN_XENABLE, OUTPUT);
+    pinMode(STEPPER_PIN_YENABLE, OUTPUT);
+    pinMode(STEPPER_PIN_ZENABLE, OUTPUT);
+    pinMode(STEPPER_PIN_ZENABLE, OUTPUT);
 
     pinMode(BUTTON_ENTER,INPUT);
     pinMode(BUTTON_LEFT,INPUT);
@@ -37,9 +38,9 @@ void Mech_Arm::initializeSteppers() const {
     pinMode(BUTTON_UP,INPUT);
     pinMode(BUTTON_DOWN,INPUT);
 
-    // stepperX->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::xEnable));
-    // stepperY->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::yEnable));
-    // stepperZ->setEnablePin(static_cast<uint8_t>(STEPPER_PINS::zEnable));
+    // stepperX->setEnablePin(xEnable));
+    // stepperY->setEnablePin(yEnable));
+    // stepperZ->setEnablePin(zEnable));
 
     stepperX->setAcceleration(3500);
     
@@ -51,15 +52,15 @@ void Mech_Arm::initializeSteppers() const {
     stepperY->setSpeed(1600);
     stepperZ->setSpeed(1600);
 
-    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), false);
-    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), false);
-    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), false);
+    stepperState(STEPPER_PIN_XENABLE, false);
+    stepperState(STEPPER_PIN_YENABLE, false);
+    stepperState(STEPPER_PIN_ZENABLE, false);
 }
 
 
 void Mech_Arm::moveStepper(){
     Serial.println("Moving..");
-    lcd_menu.lcdClear(0);
+    Lcd_Menu::lcdClear(0);
     lcd.print("Moving..");
 
     // unsigned long positions[2]={xAxis,yAxis};
@@ -70,33 +71,33 @@ void Mech_Arm::moveStepper(){
     stepperY->setSpeed(ySpeed);
     stepperZ->setSpeed(zSpeed);
 
-    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), true);
+    stepperState(STEPPER_PIN_YENABLE, true);
     while(stepperY->distanceToGo()!=0){
         stepperY->runSpeedToPosition();
-        if(digitalRead(static_cast<uint8_t>(STEPPER_PINS::yLimitSwitch))==HIGH){
+        if(digitalRead(STEPPER_PIN_YLIMIT_SW)==HIGH){
             Serial.println("EMERGENCY STOP");
             resetPosition(1);
         }
     }
 
-    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), true);
+    stepperState(STEPPER_PIN_XENABLE, true);
     while(stepperX->distanceToGo()!=0){
         stepperX->run();
-        if(digitalRead(static_cast<uint8_t>(STEPPER_PINS::xLimitSwitch))==HIGH){
+        if(digitalRead(STEPPER_PIN_XLIMIT_SW)==HIGH){
             Serial.println("EMERGENCY STOP");
             resetPosition(0);
         }
     }
 
-    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), true);
+    stepperState(STEPPER_PIN_ZENABLE, true);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        if(digitalRead(static_cast<uint8_t>(STEPPER_PINS::zLimitSwitch))==HIGH){
+        if(digitalRead(STEPPER_PIN_ZLIMIT_SW)==HIGH){
             Serial.println("EMERGENCY STOP");
             resetPosition(2);
         }
     }
-    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), false);
+    stepperState(STEPPER_PIN_ZENABLE, false);
 
     Serial.println("[X: "+static_cast<String>(xAxis)+"]");
     Serial.println("[Y: "+static_cast<String>(yAxis)+"]");
@@ -120,10 +121,10 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     steppers.addStepper(*stepperX);
     steppers.addStepper(*stepperY);
 
-    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), true);
-    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), true);
-    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), true);
-    lcd_menu.lcdClear(1);
+    stepperState(STEPPER_PIN_XENABLE, true);
+    stepperState(STEPPER_PIN_YENABLE, true);
+    stepperState(STEPPER_PIN_ZENABLE, true);
+    Lcd_Menu::lcdClear(1);
     lcd.print("BoxNo: "+static_cast<String>(boxNo));
 
     xAxis=xCordinate[boxNo-1];
@@ -131,21 +132,21 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     long positions[2]={static_cast<long>(xAxis), static_cast<long>(yAxis)};
     steppers.moveTo(positions);
     while(steppers.run()){
-        led_indicator.blink(boxNo, COLOR::GREEN);
+        led_indicator.blink(boxNo, COLOR_GREEN);
     }
     zAxis=zCordinate[boxNo];//extend Arm
     stepperZ->moveTo(static_cast<long>(zAxis));
     stepperZ->setSpeed(zSpeed);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR::GREEN);
+        led_indicator.blink(boxNo, COLOR_GREEN);
     }
     yAxis=yAxis+5000;//unlock Box
     stepperY->moveTo(static_cast<long>(yAxis));
     stepperY->setSpeed(ySpeed);
     while(stepperY->distanceToGo()!=0){
         stepperY->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR::GREEN);
+        led_indicator.blink(boxNo, COLOR_GREEN);
     }
 
     zAxis=zAxis+7000;//push it out
@@ -153,7 +154,7 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     stepperZ->setSpeed(zSpeed);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR::GREEN);
+        led_indicator.blink(boxNo, COLOR_GREEN);
     }
 
     yAxis=yCordinate[boxNo];
@@ -165,9 +166,9 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     while((stepperY->distanceToGo()!=0) && (stepperZ->distanceToGo()!=0)){
         stepperY->runSpeedToPosition();
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR::GREEN);
+        led_indicator.blink(boxNo, COLOR_GREEN);
     }
-    led_indicator.setColor(boxNo, COLOR::BLUE);
+    led_indicator.setColor(boxNo, COLOR_BLUE);
 
     zAxis=0;//Return to position
     stepperZ->moveTo(static_cast<long>(zAxis));
@@ -191,7 +192,7 @@ void Mech_Arm::unlockAllBox(){
 void Mech_Arm::bringEmHome(){
     String message="STEPPER RESET";
     Serial.println(message);
-    lcd_menu.lcdClear(1);
+    Lcd_Menu::lcdClear(1);
     lcd.print(message);
 
     resetPosition(2);
@@ -199,7 +200,7 @@ void Mech_Arm::bringEmHome(){
     resetPosition(1);
 
     message="RESET DONE";
-    lcd_menu.lcdClear(1);
+    Lcd_Menu::lcdClear(1);
     lcd.print(message);
     Serial.println(message);
 }
@@ -214,29 +215,29 @@ boolean Mech_Arm::resetPosition(byte const axis){
     if(axis==0){
         ch='X';
         stepper=*stepperX;
-        limitSwitch= static_cast<byte>(STEPPER_PINS::xLimitSwitch);
-        enable= static_cast<byte>(STEPPER_PINS::xEnable);
+        limitSwitch= STEPPER_PIN_XLIMIT_SW;
+        enable= STEPPER_PIN_XENABLE;
         speed=stepper.speed();
         stepper.setSpeed(-500);
     }else if(axis==1){
         ch='Y';
         stepper=*stepperY;
-        limitSwitch= static_cast<byte>(STEPPER_PINS::yLimitSwitch);
-        enable= static_cast<byte>(STEPPER_PINS::yEnable);
+        limitSwitch= STEPPER_PIN_YLIMIT_SW;
+        enable= STEPPER_PIN_YENABLE;
         speed=stepper.speed();
         stepper.setSpeed(-800);
     }else if(axis==2){
         ch='Z';
         stepper=*stepperZ;
-        limitSwitch= static_cast<byte>(STEPPER_PINS::zLimitSwitch);
-        enable= static_cast<byte>(STEPPER_PINS::zEnable);
+        limitSwitch= STEPPER_PIN_ZLIMIT_SW;
+        enable= STEPPER_PIN_ZENABLE;
         speed=stepper.speed();
         stepper.setSpeed(-1200);
     }else
         return false;
 
     // AV_Functions::beepFor(500);
-    lcd_menu.lcdClear(0);
+    Lcd_Menu::lcdClear(0);
     lcd.setCursor(0,0);
     lcd.print(static_cast<String>(ch)+" Axis Reset");
     Serial.println("Reset Pos "+ static_cast<String>(ch));
@@ -270,7 +271,7 @@ boolean Mech_Arm::resetPosition(byte const axis){
     stepper.setCurrentPosition(0);
     stepper.setSpeed(speed);
     stepperState(enable, false);
-    lcd_menu.lcdClear(0);
+    Lcd_Menu::lcdClear(0);
     lcd.setCursor(0,0);
     lcd.print(static_cast<String>(ch)+" Reset Done");
     AV_Functions::beepFor(500);
@@ -282,7 +283,7 @@ boolean Mech_Arm::resetPosition(byte const axis){
 
 void Mech_Arm::boxMarker(){
     double steps=1000;
-    lcd_menu.lcdClear(1);
+    Lcd_Menu::lcdClear(1);
     lcd.print("Marker");
     Serial.println("Marker");
 
@@ -300,7 +301,7 @@ void Mech_Arm::boxMarker(){
     bool run=true;
     while(run){
         boolean change=false;
-        led_indicator.blink(currentBox,COLOR::RED);
+        led_indicator.blink(currentBox,COLOR_RED);
         while(Serial.available()) {
             String ch=Serial.readStringUntil('\n');
             if(ch.charAt(0)=='N') {
@@ -313,22 +314,22 @@ void Mech_Arm::boxMarker(){
                 Serial.print("\nTurning on ");
                 if(ch.charAt(1)=='x'||ch.charAt(1)=='X') {
                     Serial.print('x');
-                    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), true);
+                    stepperState(STEPPER_PIN_XENABLE, true);
                     AV_Functions::waitForInput();
-                    stepperState(static_cast<byte>(STEPPER_PINS::xEnable), false);
-                    digitalWrite(static_cast<uint8_t>(STEPPER_PINS::X_step_pin),LOW);
+                    stepperState(STEPPER_PIN_XENABLE, false);
+                    digitalWrite(STEPPER_PIN_XSTEP,LOW);
                 }else if(ch.charAt(1)=='y'||ch.charAt(1)=='Y') {
                     Serial.print('y');
-                    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), true);
+                    stepperState(STEPPER_PIN_YENABLE, true);
                     AV_Functions::waitForInput();
-                    stepperState(static_cast<byte>(STEPPER_PINS::yEnable), false);
-                    digitalWrite(static_cast<uint8_t>(STEPPER_PINS::Y_step_pin),LOW);
+                    stepperState(STEPPER_PIN_YENABLE, false);
+                    digitalWrite(STEPPER_PIN_YSTEP,LOW);
                 }else if(ch.charAt(1)=='z'||ch.charAt(1)=='Z') {
                     Serial.print('z');
-                    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), true);
+                    stepperState(STEPPER_PIN_ZENABLE, true);
                     AV_Functions::waitForInput();
-                    stepperState(static_cast<byte>(STEPPER_PINS::zEnable), false);
-                    digitalWrite(static_cast<uint8_t>(STEPPER_PINS::Z_step_pin),LOW);
+                    stepperState(STEPPER_PIN_ZENABLE, false);
+                    digitalWrite(STEPPER_PIN_ZSTEP,LOW);
                 }
                 Serial.println();
                 Serial.println("off");
@@ -359,14 +360,14 @@ void Mech_Arm::boxMarker(){
                 }
                 Serial.println("\n Speed Set to : "+static_cast<String>(enteredSpeed.toDouble()));
             }else if(ch.toDouble()<=16 && ch.toDouble()>=1){
-                led_indicator.setColor(currentBox,COLOR::BLUE);
+                led_indicator.setColor(currentBox,COLOR_BLUE);
                 currentBox=ch.toInt();
-                lcd_menu.lcdClear(0);
+                Lcd_Menu::lcdClear(0);
                 lcd.print("box: "+static_cast<String>(currentBox));
                 Serial.println("Loaded Box: "+static_cast<String>(currentBox));
             }else{
                 steps=ch.toDouble();
-                lcd_menu.lcdClear(1);
+                Lcd_Menu::lcdClear(1);
                 lcd.print("stp: "+static_cast<String>(steps));
                 Serial.println("Loaded Step: "+static_cast<String>(steps));
             }
@@ -381,10 +382,10 @@ void Mech_Arm::boxMarker(){
             Zcord[currentBox-1]=zAxis;
             if(zAxis>1000){ zAxis=zAxis-1000; change = true;}
 
-            led_indicator.setColor(currentBox,COLOR::GREEN);
+            led_indicator.setColor(currentBox,COLOR_GREEN);
             currentBox=currentBox-1;
             if(currentBox<=1) currentBox=16;
-            lcd_menu.lcdClear(0);
+            Lcd_Menu::lcdClear(0);
             lcd.print("box: "+ static_cast<String>(currentBox));
 
             Serial.println("XCoord= {");

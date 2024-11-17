@@ -1,12 +1,13 @@
 // #include <AV_Functions.h>
+#include <AV_Functions.h>
+
 #include "Main.h"
 #include <LiquidCrystal_I2C.h>
 #include <RTClib.h>
 
 #include <Led_indicator.h>
 #include <Mech_Arm.h>
-#include <BUTTON_PINS.h>
-#include <AV_PINS.h>
+#include <IO_PINS.h>
 #include <Blink_Array.h>
 #include <CommunicationHandler.h>
 #include <Lcd_Menu.h>
@@ -20,6 +21,11 @@
 #include <Command_get_time.h>
 #include <Command_daylight_sav.h>
 #include <Command_get_network_inf.h>
+#include <Command_server_ip.h>
+#include <Command_reminderB_change.h>
+#include <Command_reminderB_send_log.h>
+#include <ReminderBRunner.h>
+
 
 constexpr byte box_size = 16;
 Box boxes[box_size] = {
@@ -46,11 +52,7 @@ auto command_get_time = Command_get_time(
         CommunicationHandler::NTP_response_handler,
         [](){return true;},
         20000, 3600000);
-auto command_get_reminder_b = Command_get_reminderB (
-        CommunicationHandler::resend_command_get_reminder_B,
-        CommunicationHandler::get_reminder_b_response_handler,
-        [](){return true;},
-        2000);
+
 auto command_activate_AP = Command_activate_AP (
         CommunicationHandler::send_command_activate_ap,
         CommunicationHandler::activate_AP_response_handler,
@@ -71,6 +73,29 @@ auto command_daylight_sav = Command_daylight_sav(
         CommunicationHandler::daylight_sav_response_handler,
         CommunicationHandler::daylight_sav_request_handler,
         10000);
+auto command_server_ip = Command_server_ip(
+        CommunicationHandler::send_command_server_ip,
+        CommunicationHandler::server_ip_response_handler,
+        CommunicationHandler::server_ip_request_handler,
+        6000);
+
+auto command_get_reminder_b = Command_get_reminderB (
+        CommunicationHandler::send_command_get_reminder_B,
+        CommunicationHandler::get_reminder_b_response_handler,
+        [](){return true;},
+        2000);
+auto command_reminderB_change = Command_reminderB_change(
+        CommunicationHandler::send_command_reminderB_change,
+        CommunicationHandler::reminderB_change_response_handler,
+        CommunicationHandler::reminderB_change_request_handler,
+        4000,180000);
+
+auto command_reminderB_send_log = Command_reminderB_send_log(
+        CommunicationHandler::send_command_reminderB_change,
+        CommunicationHandler::reminderB_change_response_handler,
+        CommunicationHandler::reminderB_change_request_handler,
+        4000);
+
 
 
 RTC_DS1307 rtc;
@@ -81,7 +106,9 @@ auto mech_arm = Mech_Arm();
 auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
 auto upcommingReminderB=  ReminderB();
-auto network_info= Network_info(adjust_daylight_saving);
+auto reminderBRunner=  ReminderBRunner();
+
+auto network_info= Network_info();
 
 
 
@@ -96,68 +123,67 @@ void setup() {
     rtc.begin();
     // led_indicator.ledTestFunction(100);
     for(auto &box : boxes)
-        box.set_status(DEFAULT_);
+        box.set_status(BOX_STATUS_DEFAULT);
 
-
+    command_get_reminder_b.send_request(get_current_unix_time());
 }
 
 unsigned long prevTime=0;
-unsigned long prevTime_since_reminder_request=0;
 void loop() {
     if (millis()-prevTime>1000) {
         prevTime=millis();
         const DateTime current_time = rtc.now();
         if(upcommingReminderB.check_for_alarm(current_time))
-            Serial.println("ALARM");
-        print_lcd_time(current_time,12);
+            reminderBRunner.set_current_reminder(upcommingReminderB);
+
+        print_lcd_time(current_time);
         Sensor_unit::check_if_any_box_open();
 
     }
-    // if (millis()-prevTime_since_reminder_request>4000 && !upcommingReminderB.isValid()) {
-    //     CommunicationHandler::send_command_get_reminder_B(get_current_plain_unix_time());
-    //     prevTime_since_reminder_request=millis();
-    //
-    // }
+    if (command_get_reminder_b.status()==COMPLETED && !upcommingReminderB.isValid()) {
+        command_get_reminder_b.send_request(get_current_unix_time());
+    }
 
     blink_array.blinkAll();
     CommunicationHandler::handle_communications();
     Lcd_Menu::handleMenu();
+    reminderBRunner.handleReminder();
 }
 
-void print_lcd_time(const DateTime &current_time, const byte mode) {
+
+
+
+void print_lcd_time(const DateTime &current_time, const TimeMode mode) {
+    lcd.setCursor(1,0);
+    lcd.print("next: "+upcommingReminderB.display_time());
+
     lcd.setCursor(4,1);
     lcd.print(get_formated_Time(current_time,mode));
 }
 
-unsigned long get_current_plain_unix_time() {
+
+unsigned long get_current_unix_time() {
     const DateTime curr_time = rtc.now();
     const auto temp = DateTime(0,0,0,curr_time.hour(),curr_time.minute(),curr_time.second());
     return temp.unixtime();
 }
 
-String get_formated_Time(const DateTime &curr_time, const byte mode) {
-    if(mode == 12)
+
+String get_formated_Time(const DateTime &curr_time, const TimeMode mode) {
+    if(mode == TIME_MODE_12)
         return
-            beautifyTime(curr_time.twelveHour())+":"
-            +beautifyTime(curr_time.minute())+":"
-            +beautifyTime(curr_time.second())+" "
+            AV_Functions::beautifyTime(curr_time.twelveHour())+":"
+            +AV_Functions::beautifyTime(curr_time.minute())+":"
+            +AV_Functions::beautifyTime(curr_time.second())+" "
             +(curr_time.isPM()? "p": " ");
     return
-        beautifyTime(rtc.now().hour())+":"
-        +beautifyTime(rtc.now().minute()) +":"
-        +beautifyTime(rtc.now().second());
+        AV_Functions::beautifyTime(rtc.now().hour())+":"
+        +AV_Functions::beautifyTime(rtc.now().minute()) +":"
+        +AV_Functions::beautifyTime(rtc.now().second());
 }
 
-String beautifyTime(const uint8_t h_m_s) {
-    if(h_m_s<10)
-        return '0'+static_cast<String>(h_m_s);
-    return static_cast<String>(h_m_s);
-}
-void adjust_daylight_saving(const bool dls) {
-    dls?
-        rtc.adjust(DateTime(rtc.now().unixtime()+3600)):
-        rtc.adjust(DateTime(rtc.now().unixtime()-3600));
-}
+
+
 
 
 // void addBoxes() {
@@ -209,179 +235,9 @@ void adjust_daylight_saving(const bool dls) {
 
 
 
-// void loop() {
-//   // Serial.println("Mamaaa");
-//
-//   // while(Serial.available()) {
-//   //   JsonArray array = doc.to<JsonArray>();
-//   //
-//   //   // add some values
-//   //   array.add("hello");
-//   //   array.add(42);
-//   //   array.add(3.14);
-//   //
-//   //   // serialize the array and send the result to Serial
-//   //   serializeJson(doc, Serial);
-//   // }
-//   while (!Serial.available()){}
-//
-//   // JsonArray array = doc.to<JsonArray>();
-//   //
-//   // // add some values
-//   // array.add("hello");
-//   // array.add(42);
-//   // array.add(3.14);
-//   //
-//   // // serialize the array and send the result to Serial
-//   // // serializeJson(doc, Serial);
-//   // while(Serial.available()) {
-//   // }
-// }
-//
-
-// void loop() {
-//   if(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))) {
-//     AV_Functions::beepFor(100);
-//     while(digitalRead(static_cast<uint8_t>(BUTTON_PINS::enterButton))){delay(100);}
-//     lcd_menu.menuPage();
-//     lcd_menu.getLcd().clear();
-//     lcd_menu.getLcd().print("MAIN PAGE");
-//   }
-//   // checkEspForRequest();
-// JsonDocument doc;
-// while(espPort.available()) {
-//     DeserializationError error = deserializeJson(doc, espPort);
-//     if(error) Serial.println(error.f_str());
-//     // else serializeJson(doc, Serial);
-//     serializeJson(doc, Serial);
-//
-//     Serial.println("Caught One!\n\n");
-//     espPort.flush();
-//     AV_Functions::beepFor(100);
-// }
-// delay(10000);
-// }
-
-//
-// boolean initializeEspCommunicator(){
-//   espPort.begin(9600);
-//   delay(50);
-//   if(!espPort.isListening())
-//     return false;
-//   return true;
-// }
-//
-//
-// void checkEspForRequest() {
-//   String identifier="";
-//   while(espPort.available()){//...............................SOFT_SERIAL
-//     espPort.readStringUntil('{');
-//
-//     identifier=espPort.readStringUntil(':');
-//     if(identifier=="ALM1"){ //...........................Mode_B(Default)
-//       Serial.print("Alarm1= ");
-//       String alm=espPort.readStringUntil('}')+'}';
-//       // currentB=jsonToClassB(alm);
-//       Serial.println(currentB.toString());
-//     }else if(identifier=="UPC1"){
-//       Serial.print("Upcomming1= ");
-//       String upc=espPort.readStringUntil('}')+'}';
-//       // upcommingB=jsonToClassB(upc);
-//       Serial.println(upcommingB.toString());
-//
-//     }else if(identifier=="ALM0"){//.......................Mode_A
-//       Serial.print("Alarm0= ");
-//       String alm=espPort.readStringUntil('}')+'}';
-//       // currentA=jsonToClass(alm);
-//       Serial.println(currentA.toString());
-//     }else if(identifier=="UPC0"){
-//       Serial.print("Upcomming0= ");
-//       String upc=espPort.readStringUntil('}')+'}';
-//       // upcommingA=jsonToClass(upc);
-//       Serial.println(upcommingA.toString());
-//     }
-//   }
-//
-// }
-
-
-// ReminderA jsonToClass(String& dat){
-//   unsigned int id=dat.substring((dat.indexOf(':')+1),dat.indexOf(',')).toInt();
-//
-//   dat=dat.substring(dat.indexOf(',')+1);
-//   const String date=dat.substring(dat.indexOf(':')+1,dat.indexOf(','));
-//
-//   const byte H=date.substring(1,3).toInt();
-//   const byte M=date.substring(4,6).toInt();
-//
-//   dat=dat.substring(dat.indexOf(',')+1);
-//   unsigned int boxNo=dat.substring((dat.indexOf(':')+2),(dat.indexOf(',')-1)).toInt();
-//
-//   return {new DateTime(0,0,0,H,M,0),&boxNo,&id, new boolean(false)};
-// }
-
-
-// ReminderB jsonToClassB(const String& dat) {
-//   const byte H = dat.substring((dat.indexOf('=') + 1), dat.indexOf(':')).toInt();
-//   const byte M = dat.substring((dat.indexOf(':') + 1), dat.indexOf(',')).toInt();
-//
-//   String boxesString = dat.substring((dat.indexOf(',') + 1));
-//   boxesString = boxesString.substring(boxesString.indexOf('=') + 1);
-//   const String success=boxesString.substring(boxesString.indexOf('=')+1, boxesString.length()-1);
-//   boxesString = boxesString.substring(0, boxesString.indexOf(']')+1);
-//
-//   boolean suc=false;
-//   if(success.toInt()==1){
-//     suc=true;
-//   }else if(success.toInt()==0){
-//     suc=false;
-//   }
-//   boxesString.trim();
-//   return {new DateTime(0, 0, 0, H, M, 0), &boxesString, &suc};
-// }
-
-
-// void setup() {
-//   Serial.begin(9600);
-//   Serial.println("Ready");
-//   while(!Serial.available()) {
-//     Serial.println("not avail");
-//
-//   }
-//   while(Serial.available()) {
-//     Serial.println("avail");
-//   }
-//
-//   // initializePins();
-//   // lcd_menu = Lcd_Menu();
-//   // led_indicator=new Led_Indicator(
-//   //   static_cast<byte>(LED_ARRAY_PINS::dataPin),
-//   //   static_cast<byte>(LED_ARRAY_PINS::clkPin),
-//   //   static_cast<byte>(LED_ARRAY_PINS::csPin),
-//   //   2
-//   // );
-//   // mech_arm = new Mech_Arm(lcd_menu, led_indicator);
-//
-//   // initializeEspCommunicator();
-//   // mech_arm->bringEmHome();
-//
-//   // AV_Functions::beepFor(500);
-//
-//   Serial.println();
-//   // led_indicator->ledTestFunction();
-//   // lcd_menu->lcdClear(0);
-//   // lcd.print("Press to Start");
-//   // while(!digitalRead(static_cast<uint8_t>(button_pins::enterButton))) {}
-//   // delay(500);
-//
-//   // unlockAllBox();
-//   // bringEmHome();
-//   // badPosition();
-//   // unlockBox(14);
-// }
 
 void initializePins(){
-    pinMode(static_cast<uint8_t>(AV_PINS::beeper), OUTPUT);
+    pinMode(OUTPUT_PIN_BEEPER, OUTPUT);
     pinMode(BUTTON_ENTER,INPUT);
     pinMode(BUTTON_LEFT,INPUT);
     pinMode(BUTTON_RIGHT,INPUT);
@@ -389,7 +245,7 @@ void initializePins(){
     pinMode(BUTTON_DOWN,INPUT);
     pinMode(BUTTON_FORWARD,INPUT);
     pinMode(BUTTON_BACKWARD,INPUT);
-    digitalWrite(static_cast<uint8_t>(AV_PINS::beeper),HIGH);
+    digitalWrite(OUTPUT_PIN_BEEPER,HIGH);
 }
 
 

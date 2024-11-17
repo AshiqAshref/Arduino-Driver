@@ -1,6 +1,5 @@
 #include "Blink.h"
 
-#include <Led_Indicator.h>
 
 extern Led_Indicator led_indicator;
 void Blink::blink(){
@@ -10,7 +9,7 @@ void Blink::blink(){
             if(color_single) blink_ch();
             else blink_st();
         }else
-            led_indicator.setColor(this->boxNo_, COLOR::CLEAR);
+            led_indicator.setColor(this->boxNo_, COLOR_CLEAR);
         this->blinkState_ = !this->blinkState_;
 
     }
