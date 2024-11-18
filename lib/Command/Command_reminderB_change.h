@@ -8,22 +8,32 @@ class Command_reminderB_change final: public Command {
     const unsigned long retry_interval_onSucc_;
     const unsigned long retry_interval_onFail_;
 public:
-    Command_reminderB_change(void(*send_request)(), bool(*response_handler)(),
-                              bool(*request_handler)(),
-                              const unsigned long retry_interval_on_fail, const unsigned long retry_interval_on_succ)
-            : Command(REMINDERB_CH, send_request, response_handler, request_handler, retry_interval_on_fail),
-    retry_interval_onSucc_(retry_interval_on_succ), retry_interval_onFail_(retry_interval_on_fail) {
-        set_status(COMPLETED_REFRESH);
-
+    Command_reminderB_change(
+            void(*send_request)(),
+            bool(*response_handler)(),
+            bool(*request_handler)(),
+            const unsigned long retry_interval_on_fail,
+            const unsigned long retry_interval_on_succ
+        ):
+        Command(
+            REMINDERB_CH,
+            send_request,
+            response_handler,
+            request_handler,
+            retry_interval_on_fail
+        ),
+        retry_interval_onSucc_(retry_interval_on_succ),
+        retry_interval_onFail_(retry_interval_on_fail)
+    {
+        set_status(FAILED);
     }
 
     unsigned long current_revision_no() const {return this->current_revision_no_;}
     void set_next_reminder_time_key(const unsigned long current_revision_no_) {this->current_revision_no_=current_revision_no_;}
 
 
-
     void set_status(const CommandStatus status) override {
-        if(status==COMPLETED) {
+        if(status==COMPLETED|| status==COMPLETED_REFRESH) {
             this->status_ = COMPLETED_REFRESH;
             retry_interval = retry_interval_onSucc_;
         }else {
@@ -34,7 +44,6 @@ public:
     }
 
     Command_enum command() override {return this->command_;}
-
 };
 
 

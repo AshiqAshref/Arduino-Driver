@@ -9,10 +9,20 @@
 
 class Command_deactivate_ap final : public Command {
 public:
-    Command_deactivate_ap(void(*send_request)(), bool(*response_handler)(),
-                          bool(*request_handler)(), const unsigned long retry_interval_on_fail)
-        : Command(DEACTIVATE_AP, send_request, response_handler, request_handler, retry_interval_on_fail) {
-    }
+    Command_deactivate_ap(
+            void(*send_request)(),
+            bool(*response_handler)(),
+            bool(*request_handler)(),
+            const unsigned long retry_interval_on_fail
+        ):
+        Command(
+            DEACTIVATE_AP,
+            send_request,
+            response_handler,
+            request_handler,
+            retry_interval_on_fail
+        )
+    {}
     virtual ~Command_deactivate_ap() = default;
 
     Command_enum command() override {return this->command_;}

@@ -11,17 +11,21 @@ class Command_server_ip final : public Command{
     IPAddress server_ip;
     bool (*response_handler_bool)(const IPAddress&, bool);
 public:
-    Command_server_ip(void(*send_request)(),
-        bool (*response_handler_bool)(const IPAddress&, bool),
-        bool(*request_handler)(),
-        const unsigned long retry_interval_on_fail
-        ) : Command(
-                SERVER_IP,
-                send_request,
-                []{return true;},
-                request_handler,
-                retry_interval_on_fail
-                ),response_handler_bool(response_handler_bool){}
+    Command_server_ip(
+            void(*send_request)(),
+            bool (*response_handler_bool)(const IPAddress&, bool),
+            bool(*request_handler)(),
+            const unsigned long retry_interval_on_fail
+        ):
+        Command(
+            SERVER_IP,
+            send_request,
+            []{return true;},
+            request_handler,
+            retry_interval_on_fail
+        ),
+        response_handler_bool(response_handler_bool)
+    {}
 
     Command_enum command() override {return this->command_;}
     bool command_type() const {return this->command_type_;}

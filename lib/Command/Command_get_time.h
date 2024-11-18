@@ -7,16 +7,28 @@ class Command_get_time final: public Command {
     const unsigned long retry_interval_onFail_;
 
 public:
-    Command_get_time(void(*send_request)(), bool(*response_handler)(), bool(*request_handler)(),
-                     const unsigned long retry_interval, const unsigned long retry_interval_onSuccess)
-        : Command(GET_TIME, send_request, response_handler, request_handler, retry_interval),
-    retry_interval_onSucc_(retry_interval_onSuccess),
-    retry_interval_onFail_(retry_interval) {
-        set_status(COMPLETED_REFRESH);
+    Command_get_time(
+            void(*send_request)(),
+            bool(*response_handler)(),
+            bool(*request_handler)(),
+            const unsigned long retry_interval,
+            const unsigned long retry_interval_onSuccess
+        ):
+        Command(
+            GET_TIME,
+            send_request,
+            response_handler,
+            request_handler,
+            retry_interval
+        ),
+        retry_interval_onSucc_(retry_interval_onSuccess),
+        retry_interval_onFail_(retry_interval)
+    {
+        set_status(FAILED);
     }
 
     void set_status(const CommandStatus status) override {
-        if(status==COMPLETED) {
+        if(status==COMPLETED|| status==COMPLETED_REFRESH) {
             this->status_ = COMPLETED_REFRESH;
             retry_interval = retry_interval_onSucc_;
         }else {

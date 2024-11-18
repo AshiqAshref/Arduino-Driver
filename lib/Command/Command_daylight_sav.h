@@ -12,17 +12,20 @@ class Command_daylight_sav final : public Command{
     bool (*response_handler_bool)(bool,bool);
 
 public:
-    Command_daylight_sav(void(*send_request)(),
-        bool (*response_handler_bool)(bool,bool),
-        bool(*request_handler)(),
-        const unsigned long retry_interval_on_fail
-        ) : Command(
-                DAYLIGHT_SAV,
-                send_request,
-                []{return true;},
-                request_handler,
-                retry_interval_on_fail
-                ),response_handler_bool(response_handler_bool)
+    Command_daylight_sav(
+            void(*send_request)(),
+            bool (*response_handler_bool)(bool,bool),
+            bool(*request_handler)(),
+            const unsigned long retry_interval_on_fail
+        ):
+        Command(
+            DAYLIGHT_SAV,
+            send_request,
+            []{return true;},
+            request_handler,
+            retry_interval_on_fail
+        ),
+        response_handler_bool(response_handler_bool)
     {
         this->Command::set_status(IN_PROGRESS);
     }

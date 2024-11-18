@@ -91,9 +91,9 @@ auto command_reminderB_change = Command_reminderB_change(
         4000,180000);
 
 auto command_reminderB_send_log = Command_reminderB_send_log(
-        CommunicationHandler::send_command_reminderB_change,
-        CommunicationHandler::reminderB_change_response_handler,
-        CommunicationHandler::reminderB_change_request_handler,
+        CommunicationHandler::send_command_reminderB_send_log,
+        CommunicationHandler::reminderB_send_log_response_handler,
+        CommunicationHandler::reminderB_send_log_request_handler,
         4000);
 
 
@@ -181,58 +181,6 @@ String get_formated_Time(const DateTime &curr_time, const TimeMode mode) {
         +AV_Functions::beautifyTime(rtc.now().minute()) +":"
         +AV_Functions::beautifyTime(rtc.now().second());
 }
-
-
-
-
-
-// void addBoxes() {
-//     String json = R"(
-//     [
-//         {
-//             "med_id": 1,
-//             "med_box_no": 7,
-//             "med_amount": 25,
-//             "med_name": "NEPAFENAC"
-//         },
-//         {
-//             "med_id": 2,
-//             "med_box_no": 14,
-//             "med_amount": 56,
-//             "med_name": "AMNEAL BIOSCIENCES"
-//         },
-//         {
-//             "med_id": 20,
-//             "med_box_no": 9,
-//             "med_amount": 50,
-//             "med_name": "TRIMETHOPRIM HYDROCHLORIDE"
-//         }
-//     ])";
-//     JsonDocument doc;
-//     DeserializationError error = deserializeJson(doc,json);
-//     if(error) {
-//         Serial.print("Error..: ");
-//         Serial.println(error.f_str());
-//         Serial.println();
-//     }
-//     serializeJson(doc, Serial);
-//     Serial.print("boxes size: ");
-//     Serial.println(doc.size());
-//
-//     for(size_t i=0;i<doc.size();i++) {
-//         // auto med_id = doc[i]["med_id"].as<unsigned int>();
-//         // byte med_box_no = doc[i]["med_box_no"].as<byte>();
-//         // byte med_amount = doc[i]["med_amount"].as<byte>();
-//         String med_name = doc[i]["med_name"].as<String>();
-//
-//
-//
-//     }
-//
-//     Serial.println(doc["times"][0]["timeb_time"].as<String>());
-//     doc.clear();
-// }
-
 
 
 

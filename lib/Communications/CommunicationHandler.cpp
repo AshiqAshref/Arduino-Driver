@@ -41,7 +41,8 @@ Command *commands[commands_size]= {
     &command_get_network_inf,
     &command_daylight_sav,
     &command_server_ip,
-    &command_reminderB_change
+    &command_reminderB_change,
+    &command_reminderB_send_log
 }; // NOLINT(*-slicing, *-interfaces-global-init)
 
 

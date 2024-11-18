@@ -53,16 +53,22 @@ public:
     bool (*request_handler_)();
     unsigned long retry_interval;
 
-    Command(const Command_enum command, void(*send_request_)(), bool(*response_handler)(), bool(*request_handler)(),
-            const unsigned long retry_interval)
-        : command_(command),
-          send_request_(send_request_),
-          response_handler_(response_handler),
-          request_handler_(request_handler),
-          retry_interval(retry_interval)
-          {}
+    Command(
+            const Command_enum command,
+            void(*send_request_)(),
+            bool(*response_handler)(),
+            bool(*request_handler)(),
+            const unsigned long retry_interval
+        ):
+        command_(command),
+        send_request_(send_request_),
+        response_handler_(response_handler),
+        request_handler_(request_handler),
+        retry_interval(retry_interval)
+    {}
 
     virtual Command_enum command()=0;
+
     void send_request(){
         this->set_status(IN_PROGRESS);
         this->send_request_();

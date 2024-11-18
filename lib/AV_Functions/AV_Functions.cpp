@@ -1,4 +1,6 @@
 #include "AV_Functions.h"
+
+#include <IO_PINS.h>
 #include <RTClib.h>
 
 
@@ -45,6 +47,12 @@ void AV_Functions::printBin(const byte aByte) {
 void AV_Functions::printlnBin(const byte aByte) {
     printBin(aByte);
     Serial.println();
+}
+
+void AV_Functions::beepFor(const uint16_t delay_) {
+    digitalWrite(OUTPUT_PIN_BEEPER,LOW);
+    delay(delay_);
+    digitalWrite(OUTPUT_PIN_BEEPER,HIGH);
 }
 
 

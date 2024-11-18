@@ -10,13 +10,25 @@ class Command_get_reminderB final: public Command {
     unsigned long next_reminder_time_key_=0;
     bool (*response_handler_long_)(unsigned long);
 public:
-    Command_get_reminderB(void(*send_request)(), bool(*response_handler_long)(unsigned long),
-                              bool(*request_handler)(), const unsigned long retry_interval_on_fail)
-            : Command(GET_REMINDER_B, send_request, []{return true;}, request_handler, retry_interval_on_fail),response_handler_long_(response_handler_long) {
-    }
+    Command_get_reminderB(
+            void(*send_request)(),
+            bool(*response_handler_long)(unsigned long),
+            bool(*request_handler)(),
+            const unsigned long retry_interval_on_fail)
+        :
+        Command(
+            GET_REMINDER_B,
+            send_request,
+            []{return true;},
+            request_handler,
+            retry_interval_on_fail
+        ),
+        response_handler_long_(response_handler_long)
+    {}
 
     unsigned long next_reminder_time_key() const {return this->next_reminder_time_key_;}
     void set_next_reminder_time_key(const unsigned long next_reminder_time_key_) {this->next_reminder_time_key_=next_reminder_time_key_;}
+
     void send_request(const unsigned long next_reminder_time_key){
         this->next_reminder_time_key_ = next_reminder_time_key;
         Command::send_request();
