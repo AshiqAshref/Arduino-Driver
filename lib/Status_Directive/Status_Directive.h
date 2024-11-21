@@ -13,7 +13,8 @@ enum BoxStatus {
     BOX_STATUS_MISSED,
     BOX_STATUS_EMPTY,
     BOX_STATUS_NOT_IN_USE,
-    BOX_STATUS_RUNNING_LOW
+    BOX_STATUS_RUNNING_LOW,
+    BOX_STATUS_UNLOCKING
 };
 
 class Status_Directive {
@@ -25,6 +26,7 @@ public:
     static void mode_default(byte boxNo);
     static void mode_current(byte boxNo);
     static void mode_removed(byte boxNo);
+    static void mode_unlocking(byte boxNo);
     static void mode_upcomming(byte boxNo);
     static void mode_missed(byte boxNo);
     static void mode_empty(byte boxNo);

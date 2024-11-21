@@ -157,6 +157,8 @@ bool CommunicationHandler::get_reminder_b_response_handler(const unsigned long g
     Serial.println("REMB RES_H");
     constexpr Command_enum command = GET_REMINDER_B;
     send_response_ACK(command);
+    Serial.print("Sent_long: ");
+    Serial.println(get_reminder_time_key);
     if(sendLong(get_reminder_time_key, command)!= SUCCESS) return false;
 
     const JsonDocument doc = receive_jsonDocument(command);
@@ -171,7 +173,7 @@ void CommunicationHandler::add_reminderb_to_class(JsonDocument doc) {
     upcommingReminderB.clear();
     const String time_str = doc["t"].as<String>();
     upcommingReminderB.set_time_id(doc["ti"]);
-    upcommingReminderB.set_time(DateTime(0,0,0,extractHour(time_str), extractMinute(time_str)));
+    upcommingReminderB.set_time(DateTime(2020,12,12, extractHour(time_str), extractMinute(time_str)));
     upcommingReminderB.set_revision_no(doc["rv"].as<uint32_t>());
     for(size_t i = 0;i<doc["m"].size();i++) {
         byte box_no = doc["m"][i]["b"];--box_no;
@@ -373,7 +375,9 @@ bool CommunicationHandler::NTP_response_handler()  {
     return false;
 }
 void CommunicationHandler::setTime(const unsigned long ux_time) {
-    rtc.adjust(DateTime(ux_time));
+    rtc.adjust(DateTime(2020,12,12,13,38,30));//TEST ONLY
+    // rtc.adjust(DateTime(ux_time));
+
     Serial.print("Time : ");
     Serial.println(ux_time);
 }
@@ -435,7 +439,6 @@ bool CommunicationHandler::reminderB_send_log_response_handler(const JsonDocumen
     Serial.println("RMB_LOG RES_H");
     constexpr Command_enum command = REMINDERB_SND_LOG;
     send_response_ACK(command);
-
 
     if(sendJsonDocument(last_reminder,command)!=SUCCESS) {
         close_session(command);

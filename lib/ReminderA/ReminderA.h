@@ -8,7 +8,7 @@
 class ReminderA{
     unsigned int id=0;
     Box *box = nullptr;
-    DateTime *time=new DateTime(0,0,0);;
+    DateTime *time=new DateTime(2020,12,12);
     boolean success=false;
 public:
     ReminderA(DateTime *time,  Box *box, unsigned int id);

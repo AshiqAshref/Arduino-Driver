@@ -16,41 +16,8 @@ public:
         return this->last_reminder_b_;
     }
 
-    void handleReminder() {
-        if(active) {
-            //TODO run reminder
-            //TODO SED LED STATUS
-            //TODO send for new reminder
-            //TODO send old reminder
-            bool allSuccess=true;
-            for(int i=0;i<last_reminder_b_.medicine_size();i++) {
-                if(last_reminder_b_.get_medicine(i)->box()->isOpen()) {
-                    last_reminder_b_.get_medicine(i)->set_success(true);
-                }
-                if(!last_reminder_b_.get_medicine(i)->isSuccess()){
-                    allSuccess=false;
-                }
-
-            }
-            if(allSuccess) {
-                closing_protocol();
-            }
-
-        }
-
-    }
-
-    void closing_protocol() {
-        set_active(false);
-        for(int i=0;i<last_reminder_b_.medicine_size();i++) {
-            if(!last_reminder_b_.get_medicine(i)->isSuccess()) {
-                last_reminder_b_.get_medicine(i)->box()->set_status(BOX_STATUS_MISSED);
-            }
-        }
-        JsonDocument expired_reminder_json=  reminderB_to_json(last_reminder_b_);
-        //TODO make command to send it back to esp
-
-    }
+    void handleReminder();
+    void closing_protocol() ;
 
     void set_current_reminder(const ReminderB &reminder_b) {
         closing_protocol();
@@ -60,8 +27,10 @@ public:
             last_reminder_b_.get_medicine(i)->box()->set_status(BOX_STATUS_CURRENT);
         }
         set_active(true);
+        unlock_boxes();
     }
 
+    void unlock_boxes() const;
     void set_active(const bool status) {this->active=status;}
     bool is_active() const {return active;}
 

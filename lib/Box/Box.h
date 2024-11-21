@@ -32,14 +32,21 @@ public:
     }
 
 
+    Pos_Coordinate coordinate() const {return position;}
     byte box_no() const {return box_no_;}
     boolean isOpen() const {return isOpen_;}
-    void isOpen(boolean value) {
+    void isOpen(const boolean value) {
         if(value)
             Status_Directive::set_mode(this->box_no_, BOX_STATUS_REMOVED);
         else if(this->isOpen_)
             set_status(status_);
         this->isOpen_=value;
+    }
+    void unlocking(const boolean value) {
+        if(value)
+            Status_Directive::set_mode(this->box_no_, BOX_STATUS_UNLOCKING);
+        else if(this->isOpen_)
+            set_status(status_);
     }
     unsigned int med_id() const {return this->med_id_;}
     void set_med_id(const unsigned int med_id) {this->med_id_ = med_id;}

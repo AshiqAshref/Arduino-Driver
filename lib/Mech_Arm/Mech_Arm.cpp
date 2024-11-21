@@ -4,24 +4,27 @@
 #include <MultiStepper.h>
 #include <IO_PINS.h>
 #include <LiquidCrystal_I2C.h>
+#include <Led_Indicator.h>
+#include <Lcd_Menu.h>
+#include <Blink_Array.h>
+#include <Box.h>
 
 // Z=1/2 step
 
 extern Led_Indicator led_indicator;
 extern LiquidCrystal_I2C lcd;
 extern Lcd_Menu lcd_menu;
+extern Blink_Array blink_array;
+
 float xSpeed=1000;
 float ySpeed=1000;
 float zSpeed=1000;
 
 Mech_Arm::Mech_Arm() {
-// Mech_Arm::Mech_Arm(const Lcd_Menu &lcd_menu, Led_Indicator *led_indicator) {
     stepperX = new AccelStepper(1, STEPPER_PIN_XSTEP, STEPPER_PIN_XDIR);
     stepperY = new AccelStepper(1, STEPPER_PIN_YSTEP, STEPPER_PIN_YDIR);
     stepperZ = new AccelStepper(1, STEPPER_PIN_ZSTEP, STEPPER_PIN_ZDIR);
 
-    // this->lcd_menu = lcd_menu;
-    // this->led_indicator = led_indicator;
     initializeSteppers();
 }
 
@@ -109,10 +112,10 @@ void Mech_Arm::moveStepper(){
     Serial.println();
 }
 
+extern Box boxes[];
+boolean Mech_Arm::unlockBox(Box *box){
+    box->unlocking(true);
 
-boolean Mech_Arm::unlockBox(byte const boxNo){
-    if(boxNo<1 || boxNo>16)
-        return false;
     const float stepperXSpeed=stepperX->speed();
     const float stepperYSpeed=stepperY->speed();
     const float stepperZSpeed=stepperZ->speed();
@@ -125,28 +128,34 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     stepperState(STEPPER_PIN_YENABLE, true);
     stepperState(STEPPER_PIN_ZENABLE, true);
     Lcd_Menu::lcdClear(1);
-    lcd.print("BoxNo: "+static_cast<String>(boxNo));
+    lcd.print("BoxNo: "+static_cast<String>(box->box_no()));
 
-    xAxis=xCordinate[boxNo-1];
-    yAxis=yCordinate[boxNo-1];
+    xAxis=box->coordinate().x();
+    yAxis=box->coordinate().y();
     long positions[2]={static_cast<long>(xAxis), static_cast<long>(yAxis)};
+
+
     steppers.moveTo(positions);
     while(steppers.run()){
-        led_indicator.blink(boxNo, COLOR_GREEN);
+        // led_indicator.blink(boxNo, COLOR_GREEN);
+        blink_array.blinkAll();
     }
-    zAxis=zCordinate[boxNo];//extend Arm
+    zAxis=box->coordinate().z();
     stepperZ->moveTo(static_cast<long>(zAxis));
     stepperZ->setSpeed(zSpeed);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR_GREEN);
+        // led_indicator.blink(boxNo, COLOR_GREEN);
+        blink_array.blinkAll();
+
     }
     yAxis=yAxis+5000;//unlock Box
     stepperY->moveTo(static_cast<long>(yAxis));
     stepperY->setSpeed(ySpeed);
     while(stepperY->distanceToGo()!=0){
         stepperY->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR_GREEN);
+        // led_indicator.blink(boxNo, COLOR_GREEN);
+        blink_array.blinkAll();
     }
 
     zAxis=zAxis+7000;//push it out
@@ -154,11 +163,12 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     stepperZ->setSpeed(zSpeed);
     while(stepperZ->distanceToGo()!=0){
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR_GREEN);
+        blink_array.blinkAll();
+        // led_indicator.blink(boxNo, COLOR_GREEN);
     }
 
-    yAxis=yCordinate[boxNo];
-    zAxis=zCordinate[boxNo];
+    yAxis=box->coordinate().y();
+    zAxis=box->coordinate().z();
     stepperY->moveTo(static_cast<long>(yAxis));
     stepperZ->moveTo(static_cast<long>(zAxis));
     stepperY->setSpeed(ySpeed);
@@ -166,9 +176,10 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     while((stepperY->distanceToGo()!=0) && (stepperZ->distanceToGo()!=0)){
         stepperY->runSpeedToPosition();
         stepperZ->runSpeedToPosition();
-        led_indicator.blink(boxNo, COLOR_GREEN);
+        blink_array.blinkAll();
+        // led_indicator.blink(boxNo, COLOR_GREEN);
     }
-    led_indicator.setColor(boxNo, COLOR_BLUE);
+    led_indicator.setColor(box->box_no()-1, COLOR_BLUE);
 
     zAxis=0;//Return to position
     stepperZ->moveTo(static_cast<long>(zAxis));
@@ -180,12 +191,15 @@ boolean Mech_Arm::unlockBox(byte const boxNo){
     stepperY->setSpeed(stepperYSpeed);
     stepperZ->setSpeed(stepperZSpeed);
 
+    box->unlocking(false);
+
+
     return true;
 }
 
 
 void Mech_Arm::unlockAllBox(){
-    for(int i=1;i<=16;i++) unlockBox(i);
+    for(int i=1;i<=16;i++) unlockBox(&boxes[i]);
 }
 
 
@@ -278,7 +292,6 @@ boolean Mech_Arm::resetPosition(byte const axis){
     delay(500);
     return true;
 }
-
 
 
 void Mech_Arm::boxMarker(){
@@ -503,22 +516,19 @@ void Mech_Arm::stepperState(const byte enable, const boolean state){
 
 
 void Mech_Arm::offsetCoordinate(char const cordinate, byte const offsetPosition, int const offSetBy, boolean const applyToAll=true){
-    if(cordinate=='X'){
-        if(applyToAll==false){
-            xCordinate[offsetPosition]=xCordinate[offsetPosition]+offSetBy;
-            return;
-        }
-    }else if(cordinate=='Y'){
-        if(applyToAll==false){
-            yCordinate[offsetPosition]=yCordinate[offsetPosition]+offSetBy;
-            return;
-        }
-    }else if (cordinate=='Z'){
-        if(applyToAll==false){
-            zCordinate[offsetPosition]=zCordinate[offsetPosition]+offSetBy;
-            return;
-        }
-    }
+    // if(cordinate=='X'){
+    //     if(applyToAll==false){
+    //         xCordinate[offsetPosition]=xCordinate[offsetPosition]+offSetBy;
+    //     }
+    // }else if(cordinate=='Y'){
+    //     if(applyToAll==false){
+    //         yCordinate[offsetPosition]=yCordinate[offsetPosition]+offSetBy;
+    //     }
+    // }else if (cordinate=='Z'){
+    //     if(applyToAll==false){
+    //         zCordinate[offsetPosition]=zCordinate[offsetPosition]+offSetBy;
+    //     }
+    // }
 }
 
 

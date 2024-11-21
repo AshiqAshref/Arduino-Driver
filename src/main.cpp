@@ -107,7 +107,6 @@ auto blink_array = Blink_Array();
 auto sensor_unit = Sensor_unit();
 auto upcommingReminderB=  ReminderB();
 auto reminderBRunner=  ReminderBRunner();
-
 auto network_info= Network_info();
 
 
@@ -124,8 +123,13 @@ void setup() {
     // led_indicator.ledTestFunction(100);
     for(auto &box : boxes)
         box.set_status(BOX_STATUS_DEFAULT);
+    // command_get_reminder_b.send_request(DateTime(2020,12,12,13,38).unixtime()); //TEST_ONLY
+    // command_get_reminder_b.send_request(get_current_unix_time()); ######REAL_CODE
+    mech_arm.bringEmHome();
+    mech_arm.unlockAllBox();
 
-    command_get_reminder_b.send_request(get_current_unix_time());
+
+
 }
 
 unsigned long prevTime=0;
@@ -133,6 +137,7 @@ void loop() {
     if (millis()-prevTime>1000) {
         prevTime=millis();
         const DateTime current_time = rtc.now();
+        // current_time.u
         if(upcommingReminderB.check_for_alarm(current_time))
             reminderBRunner.set_current_reminder(upcommingReminderB);
 
@@ -141,6 +146,7 @@ void loop() {
 
     }
     if (command_get_reminder_b.status()==COMPLETED && !upcommingReminderB.isValid()) {
+        reminderBRunner.set_current_reminder(upcommingReminderB);
         command_get_reminder_b.send_request(get_current_unix_time());
     }
 
@@ -164,7 +170,9 @@ void print_lcd_time(const DateTime &current_time, const TimeMode mode) {
 
 unsigned long get_current_unix_time() {
     const DateTime curr_time = rtc.now();
-    const auto temp = DateTime(0,0,0,curr_time.hour(),curr_time.minute(),curr_time.second());
+    Serial.print("TIME_NOW: ");
+    Serial.println(get_formated_Time(curr_time));
+    const auto temp = DateTime(2020,12,12,curr_time.hour(),curr_time.minute(),curr_time.second());
     return temp.unixtime();
 }
 

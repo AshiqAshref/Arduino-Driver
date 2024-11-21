@@ -31,6 +31,9 @@ void Status_Directive::set_mode(const byte boxNo, const BoxStatus status) {
         case BOX_STATUS_RUNNING_LOW:
             mode_running_low(boxNo);
             break;
+        case BOX_STATUS_UNLOCKING:
+            mode_running_low(boxNo);
+            break;
         default:
             break;
     }
@@ -48,6 +51,10 @@ void Status_Directive::mode_current(const byte boxNo) {
 
 void Status_Directive::mode_removed(const byte boxNo) {
     blink_array.add(boxNo,COLOR_RED);
+}
+
+void Status_Directive::mode_unlocking(const byte boxNo) {
+    blink_array.add(boxNo,COLOR_BLUE);
 }
 
 void Status_Directive::mode_upcomming(const byte boxNo) {
