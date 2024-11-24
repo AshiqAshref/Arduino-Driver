@@ -1,5 +1,5 @@
 #include "ReminderB.h"
-#include <Medicine.h>
+#include <ModeB/Medicine.h>
 
 
 
@@ -40,7 +40,7 @@ bool ReminderB::check_for_alarm(const DateTime &curr_time) {
 }
 
 
-void ReminderB::clear() {
+void ReminderB::clear_reminder() {
     time_id_ = 0;
     for(int i=0;i<medicines_size_;i++)
         delete medicines[i];
@@ -51,20 +51,4 @@ void ReminderB::clear() {
 
 
 
-// String ReminderB::toString() const{
-//     String time_str = "";
-//     if (time.hour() <= 9)
-//         time_str += '0' + String(time.hour());
-//     else
-//         time_str += String(time.hour());
-//     time_str += ':';
-//     if (time.minute() <= 9)
-//         time_str += '0' + String(time.minute());
-//     else
-//         time_str += String(time.minute());
-//
-//     return  "{"
-//                     R"("time_id" : )" + static_cast<String>(time_id) +
-//                     R"("time" : )" + time_str +
-//                 "}";
-// }
+

@@ -35,7 +35,7 @@ public:
     Pos_Coordinate coordinate() const {return position;}
     byte box_no() const {return box_no_;}
     boolean isOpen() const {return isOpen_;}
-    void isOpen(const boolean value) {
+    void setOpen(const boolean value) {
         if(value)
             Status_Directive::set_mode(this->box_no_, BOX_STATUS_REMOVED);
         else if(this->isOpen_)
@@ -45,7 +45,7 @@ public:
     void unlocking(const boolean value) {
         if(value)
             Status_Directive::set_mode(this->box_no_, BOX_STATUS_UNLOCKING);
-        else if(this->isOpen_)
+        else
             set_status(status_);
     }
     unsigned int med_id() const {return this->med_id_;}
@@ -54,7 +54,7 @@ public:
     String name() {return medicine_name_;}
     void set_name(String const& medicine_name) {this->medicine_name_ = medicine_name;}
 
-    unsigned short medicne_amount() const {return medicine_amount_;}
+    unsigned short medicine_amount() const {return medicine_amount_;}
     void set_medicne_amount(unsigned short const medicne_amount) {this->medicine_amount_ = medicne_amount;}
 
     BoxStatus &status() {return status_;}
@@ -62,13 +62,22 @@ public:
         this->status_ = status;
         Status_Directive::set_mode(this->box_no_, status);
     }
+    void toStringPrint() const{
+        Serial.print("{");
+        Serial.print( R"("med_name" : ")" + medicine_name_ + "\"");
+        Serial.print( R"(", med_id" : ")"); Serial.print(this->med_id_);
+        Serial.print( R"(", box_no" : ")"); Serial.print(this->box_no_);
+        Serial.print( R"(", med_amt" : ")");Serial.print(this->medicine_amount_);
+        Serial.print( "} ");
+    }
 
     String toString() const{
         return "{"
-                R"("name" : ")" + medicine_name_ + "\""
-                R"("box_no" : ")"+ static_cast<String>(box_no_) +
-                R"("medicine_amount" : ")"+ static_cast<String>(medicine_amount_) +
-                    "}";
+                R"("mn" : ")" + medicine_name_ + "\""
+                R"(", mi" : ")"+ static_cast<String>(med_id_) +
+                R"(", bno" : ")"+ static_cast<String>(box_no_) +
+                R"(", amt" : ")"+ static_cast<String>(medicine_amount_) +
+                    "} ";
     }
 };
 

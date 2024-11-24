@@ -32,7 +32,7 @@ void Status_Directive::set_mode(const byte boxNo, const BoxStatus status) {
             mode_running_low(boxNo);
             break;
         case BOX_STATUS_UNLOCKING:
-            mode_running_low(boxNo);
+            mode_unlocking(boxNo);
             break;
         default:
             break;

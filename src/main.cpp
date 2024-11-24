@@ -11,7 +11,7 @@
 #include <Blink_Array.h>
 #include <CommunicationHandler.h>
 #include <Lcd_Menu.h>
-#include <ReminderB.h>
+#include <ModeB/ReminderB.h>
 #include <Network_info.h>
 #include <sensor_unit.h>
 #include <Status_Directive.h>
@@ -25,6 +25,10 @@
 #include <Command_reminderB_change.h>
 #include <Command_reminderB_send_log.h>
 #include <ReminderBRunner.h>
+
+
+// #include <MemoryFree.h>
+// #include <pgmStrToRAM.h>
 
 
 constexpr byte box_size = 16;
@@ -112,21 +116,29 @@ auto network_info= Network_info();
 
 
 void setup() {
+    Serial.begin(9600);
+    Serial2.begin(115200);
+
     pinMode(STAT_LED_PIN,OUTPUT);
     digitalWrite(STAT_LED_PIN,HIGH);
     initializePins();
     Lcd_Menu::initializeLcd();
-
-    Serial.begin(9600);
-    Serial1.begin(115200);
     rtc.begin();
+
     // led_indicator.ledTestFunction(100);
     for(auto &box : boxes)
         box.set_status(BOX_STATUS_DEFAULT);
-    // command_get_reminder_b.send_request(DateTime(2020,12,12,13,38).unixtime()); //TEST_ONLY
+
+    // Serial.print(F("Free RAM = ")); //F function does the same and is now a built in library, in IDE > 1.0.0
+    // Serial.println(freeMemory());
+
+    auto tmpdt = DateTime(2020,12,12,13,38);
+    command_get_reminder_b.send_request(tmpdt.unixtime()); //TEST_ONLY
+    rtc.adjust(DateTime(2020,12,12,13,38,39));
     // command_get_reminder_b.send_request(get_current_unix_time()); ######REAL_CODE
-    mech_arm.bringEmHome();
-    mech_arm.unlockAllBox();
+    // mech_arm.bringEmHome();
+    // mech_arm.boxMarker();
+    // mech_arm.unlockAllBox();
 
 
 
@@ -135,18 +147,20 @@ void setup() {
 unsigned long prevTime=0;
 void loop() {
     if (millis()-prevTime>1000) {
+        // Serial.print(F("Free RAM = ")); //F function does the same and is now a built in library, in IDE > 1.0.0
+        // Serial.println(freeMemory());
         prevTime=millis();
         const DateTime current_time = rtc.now();
-        // current_time.u
-        if(upcommingReminderB.check_for_alarm(current_time))
+        if(upcommingReminderB.check_for_alarm(current_time)) {
+            Serial.println("Setting UPC");
             reminderBRunner.set_current_reminder(upcommingReminderB);
+        }
 
         print_lcd_time(current_time);
         Sensor_unit::check_if_any_box_open();
 
     }
     if (command_get_reminder_b.status()==COMPLETED && !upcommingReminderB.isValid()) {
-        reminderBRunner.set_current_reminder(upcommingReminderB);
         command_get_reminder_b.send_request(get_current_unix_time());
     }
 

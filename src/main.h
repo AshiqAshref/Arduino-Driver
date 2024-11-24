@@ -4,9 +4,9 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <Box.h>
+#include <ModeB/Box.h>
 #include <Pos_Coordinate.h>
-#include <ReminderB.h>
+#include <ModeB/ReminderB.h>
 #include <RTClib.h>
 
 unsigned long xCordinate[16]={

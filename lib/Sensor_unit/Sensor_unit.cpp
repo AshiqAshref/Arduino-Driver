@@ -1,5 +1,5 @@
 #include "sensor_unit.h"
-#include <Box.h>
+#include <ModeB/Box.h>
 #include <IO_PINS.h>
 
 
@@ -28,10 +28,10 @@ bool Sensor_unit::check_if_any_box_open() {
         if(isOpen(i)) {
             Serial.print("open: ");
             Serial.println(i);
-            boxes[i-1].isOpen(true);
+            boxes[i-1].setOpen(true);
             open = true;
         }else{
-            boxes[i-1].isOpen(false);
+            boxes[i-1].setOpen(false);
         }
     }
     return open;

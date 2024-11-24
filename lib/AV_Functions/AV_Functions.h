@@ -11,11 +11,15 @@ public:
     static void waitForInput();
     static void flush_();
 
+
+
     static String get_formated_Time(const DateTime &curr_time, byte mode=12);
     static String beautifyTime(uint8_t h_m_s);
     static void printBin(byte aByte);
     static void printlnBin(byte aByte);
     static JsonDocument simplify_Json(const JsonDocument &doc);
+
+
     static void beepFor(uint16_t);
 
     static bool isJsonValid(const JsonDocument &doc);

@@ -11,7 +11,8 @@
 #include <Command_reminderB_send_log.h>
 
 #include <Network_info.h>
-#include <ReminderB.h>
+#include <ModeB/ReminderB.h>
+#include <ModeB/Box.h>
 
 bool get_next_reminder_status=false;
 
@@ -32,9 +33,9 @@ extern Command_reminderB_change command_reminderB_change;
 extern Command_reminderB_send_log command_reminderB_send_log;
 
 
-constexpr byte commands_size=9;
+constexpr byte commands_size=8;
 Command *commands[commands_size]= {
-    &command_get_time,
+    // &command_get_time,
     &command_get_reminder_b,
     &command_activate_AP,
     &command_deactivate_ap,
@@ -71,8 +72,8 @@ void CommunicationHandler::handle_header(const byte response_header) {
     clear_receive_buffer();
 }
 void CommunicationHandler::handle_communications() {
-    if(Serial1.available()){
-        const byte response_header = Serial1.read();
+    if(Serial2.available()){
+        const byte response_header = Serial2.read();
         Serial.println();
         Serial.print("RCV_MAIN: ");
         printHeader(response_header);
@@ -112,9 +113,9 @@ bool CommunicationHandler::get_network_inf_response_handler_local() {
     constexpr Command_enum command = GET_NETWORK_INF;
     send_response_ACK(command);
     if(!wait_for_response(command)) return false;
-    const byte net_stat = Serial1.read();
+    const byte net_stat = Serial2.read();
     if(!wait_for_response(command)) return false;
-    if(Serial1.read()-10==net_stat) {
+    if(Serial2.read()-10==net_stat) {
         Serial.println("crc pass");
         send_status_SUCCESS(command);
     }else {
@@ -170,7 +171,7 @@ bool CommunicationHandler::get_reminder_b_response_handler(const unsigned long g
     return true;
 }
 void CommunicationHandler::add_reminderb_to_class(JsonDocument doc) {
-    upcommingReminderB.clear();
+    upcommingReminderB.clear_reminder();
     const String time_str = doc["t"].as<String>();
     upcommingReminderB.set_time_id(doc["ti"]);
     upcommingReminderB.set_time(DateTime(2020,12,12, extractHour(time_str), extractMinute(time_str)));
@@ -269,7 +270,7 @@ bool CommunicationHandler::daylight_sav_receive_dls() {
     send_response_READY_TO_RECV(command);
 
     if(!wait_for_response(command)) return false;
-    const byte response = Serial1.read();
+    const byte response = Serial2.read();
     if(response==153) {
         network_info.set_daylight_saving(true);
     }else if(response==102) {
@@ -288,8 +289,8 @@ bool CommunicationHandler::daylight_sav_send_dls(const bool daylight_sav) {
     constexpr Command_enum command = DAYLIGHT_SAV;
     if(send_response_READY_TO_SEND(command)!=READY_TO_RECV) {close_session(command); return false;}
     daylight_sav?
-        Serial1.write(153):
-        Serial1.write(102);
+        Serial2.write(153):
+        Serial2.write(102);
     if(get_response(command)!=SUCCESS) {close_session(command); return false;}
     Serial.print("SENT SUCC DLS VAL: ");
     Serial.println(daylight_sav);

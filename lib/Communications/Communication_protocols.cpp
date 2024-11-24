@@ -19,7 +19,7 @@ COMM_PROTOCOL Communication_protocols::sendJsonDocument(const JsonDocument &doc,
 
         response_code = send_response_READY_TO_SEND(command,false);
         if(response_code!=READY_TO_RECV) return response_code;
-        serializeMsgPack(doc,Serial1);
+        serializeMsgPack(doc,Serial2);
 
         response_code=get_response(command);
         if(response_code != RETRY) return response_code;
@@ -54,7 +54,7 @@ JsonDocument Communication_protocols::receive_jsonDocument(const Command_enum co
         send_response_READY_TO_RECV(command);
 
         if(!wait_for_response(command)) return doc;
-        deserializeMsgPack(doc, Serial1);
+        deserializeMsgPack(doc, Serial2);
         CrcWriter writer;
         serializeMsgPack(doc, writer);
         if(writer.hash() == crc) {
@@ -76,9 +76,9 @@ COMM_PROTOCOL Communication_protocols::sendLong(const unsigned long res_long, co
         if(current_retries>0) send_request_RETRY(command);
 
         const byte *res = longToByte(res_long);
-        for(int i=0;i<4;i++) Serial1.write(res[i]);
+        for(int i=0;i<4;i++) Serial2.write(res[i]);
         FastCRC8 CRC8;
-        Serial1.write(CRC8.smbus(res ,4));
+        Serial2.write(CRC8.smbus(res ,4));
         delete res;
 
         const COMM_PROTOCOL response_code =get_response(command);
@@ -103,10 +103,10 @@ unsigned long Communication_protocols::receive_long(const Command_enum command) 
         byte long_[4]{};
         for(int i=0;i<4;i++) { // NOLINT(*-loop-convert)
             if(!wait_for_response(command)) return 0;
-            long_[i]=Serial1.read();
+            long_[i]=Serial2.read();
         }
         if(!wait_for_response(command))return 0;
-        const byte crc_val = Serial1.read();
+        const byte crc_val = Serial2.read();
         FastCRC8 CRC8;
         if(CRC8.smbus(long_, 4)==crc_val) {
             send_status_SUCCESS(command);
@@ -149,12 +149,12 @@ IPAddress Communication_protocols::receive_IP(const Command_enum command) {
         send_response_READY_TO_RECV(command);
 
         if(!wait_for_response(command)) return IP;
-        const byte size = Serial1.read();
+        const byte size = Serial2.read();
         uint8_t ip_byte[size];
 
         for(int i=0;i<size;i++) {
             if(!wait_for_response(command)) return IP;
-            ip_byte[i]= Serial1.read();
+            ip_byte[i]= Serial2.read();
         }
 
         FastCRC32 CRC32;
@@ -200,9 +200,9 @@ COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Comman
             return response_code;
         }
 
-        Serial1.write(strlen(a));
+        Serial2.write(strlen(a));
         for(size_t i=0;i<strlen(a);i++)
-            Serial1.write(at[i]);
+            Serial2.write(at[i]);
 
         response_code=get_response(command);
         if(response_code != RETRY) {
@@ -217,7 +217,7 @@ COMM_PROTOCOL Communication_protocols::send_IP(const IPAddress &IP, const Comman
 COMM_PROTOCOL Communication_protocols::get_response(const Command_enum command, const bool clear_buffer)  {
     COMM_PROTOCOL protocol = UNKW_ERR;
     if(!wait_for_response(command)) return TIMEOUT;
-    const byte response_header = Serial1.read();
+    const byte response_header = Serial2.read();
     if(getCommand(response_header)==command) {
         const byte byte_protocol = getProtocol(response_header);
         if(byte_protocol==ACK) {
@@ -246,14 +246,14 @@ COMM_PROTOCOL Communication_protocols::get_response(const Command_enum command, 
 
 bool Communication_protocols::wait_for_response() {
     const unsigned long time_out_start = millis();
-    while(!Serial1.available())
+    while(!Serial2.available())
         if(millis()-time_out_start>=time_out_)
             return false;
     return true;
 }
 bool Communication_protocols::wait_for_response(const Command_enum command) {
     const unsigned long time_out_start = millis();
-    while(!Serial1.available())
+    while(!Serial2.available())
         if(millis()-time_out_start>=time_out_) {
             send_status_TIMEOUT(command);
             return false;
@@ -306,10 +306,10 @@ void Communication_protocols::send_header(const Command_enum command, const byte
     clear_receive_buffer();
     Serial.print("SND: ");
     printHeader((command | protocol_id));
-    Serial1.write((command | protocol_id));
+    Serial2.write((command | protocol_id));
 }
 void Communication_protocols::clear_receive_buffer() {
-    while(Serial1.available()>0)Serial1.read();
+    while(Serial2.available()>0)Serial2.read();
 }
 
 byte *Communication_protocols::longToByte(const unsigned long long_) {

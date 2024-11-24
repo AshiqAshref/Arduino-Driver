@@ -2,7 +2,7 @@
 #define MECH_ARM_H
 #include <Arduino.h>
 #include <AccelStepper.h>
-#include <Box.h>
+#include <ModeB/Box.h>
 
 
 class Mech_Arm {
@@ -37,6 +37,11 @@ class Mech_Arm {
     //     11500, 12500, 12500, 14500,
     //     12000, 12000, 13500, 14000
     // };
+
+    static void bringEmHomeDummy();
+
+    static boolean unlockBoxDummy(Box *box);
+
 
 public:
     // Mech_Arm(const Lcd_Menu &lcd_menu, Led_Indicator *led_indicator);
