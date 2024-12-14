@@ -16,7 +16,7 @@ void Status_Directive::set_mode(const byte boxNo, const BoxStatus status) {
         case BOX_STATUS_REMOVED:
             mode_removed(boxNo);
             break;
-        case BOX_STATUS_UPCOMMING:
+        case BOX_STATUS_COMPLETED:
             mode_upcomming(boxNo);
             break;
         case BOX_STATUS_MISSED:

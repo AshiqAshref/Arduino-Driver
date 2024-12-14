@@ -65,6 +65,10 @@ public:
     static void send_command_get_time();
     static bool NTP_response_handler();
 
+    static void send_command_get_box_inf();
+    static bool get_box_inf_response_handler();
+    static bool get_box_inf_request_handler();
+
 };
 
 

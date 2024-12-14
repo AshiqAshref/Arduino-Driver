@@ -48,8 +48,7 @@ public:
 
     static byte *longToByte(unsigned long long_);
     static unsigned long bytesToLong(const byte *byte_);
-    static void printBin(byte aByte);
-    static void printlnBin(byte aByte);
+
 
 };
 

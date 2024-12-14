@@ -101,7 +101,7 @@ void Lcd_Menu::initializeLcd(){
 }
 
 void Lcd_Menu::handleMenu() {
-  if(checkForButtonPress(BUTTON_ENTER)) {
+  if(AV_Functions::checkForButtonPress(BUTTON_ENTER)) {
     menuPage();
   }
 }
@@ -114,7 +114,7 @@ void Lcd_Menu::menuPage(){
   printOptions(menu_items,total_menu_items,current_menu_item);
   boolean exit=false;
   while(!exit){
-    const uint8_t button = checkForButtonPress(vertical_button_config, buttons_vertical_size);
+    const uint8_t button = AV_Functions::checkForButtonPress(vertical_button_config, buttons_vertical_size);
     if(button!=0) {
       if(button==BUTTON_UP)  {
         if(current_menu_item==0)current_menu_item= total_menu_items-1;
@@ -145,7 +145,7 @@ void Lcd_Menu::setupPage(){
 
   boolean exit=false;
   while(!exit){
-    const uint8_t button = checkForButtonPress(vertical_button_config, buttons_vertical_size);
+    const uint8_t button = AV_Functions::checkForButtonPress(vertical_button_config, buttons_vertical_size);
     if(button!=0) {
       if(button == BUTTON_UP) {
         if(current_menu_item==0)current_menu_item= total_menu_items-1;
@@ -194,7 +194,7 @@ void Lcd_Menu::network_page() {
   printOptions(menu_items,total_menu_items,current_menu_item);
   boolean exit=false;
   while(!exit){
-    const uint8_t button = checkForButtonPress(vertical_button_config, buttons_vertical_size);
+    const uint8_t button = AV_Functions::checkForButtonPress(vertical_button_config, buttons_vertical_size);
     if(button!=0) {
       if(button==BUTTON_UP)  {
         if(current_menu_item==0)current_menu_item= total_menu_items-1;
@@ -257,7 +257,7 @@ void Lcd_Menu::net_status_Page() {
   }else {
     printCenter("NET_IDLE",1);
   }
-  while(checkForButtonPress(BUTTON_ENTER)!=BUTTON_ENTER){}
+  while(AV_Functions::checkForButtonPress(BUTTON_ENTER)!=BUTTON_ENTER){}
 }
 
 void Lcd_Menu::helpPage() {
@@ -277,7 +277,7 @@ void Lcd_Menu::changeIpPage(){
 
   boolean exit=false;
   while(!exit){
-    const uint8_t button = checkForButtonPress(vertical_button_config, buttons_vertical_size);
+    const uint8_t button = AV_Functions::checkForButtonPress(vertical_button_config, buttons_vertical_size);
     if(button!=0) {
       if(button == BUTTON_UP) {
         if(current_menu_item==0)current_menu_item= total_menu_items-1;
@@ -336,7 +336,7 @@ void Lcd_Menu::showIpPage()  {
   lcd.setCursor(0,1);
   lcd.write(3);
   lcd.print(network_info.server_SB());
-  while(checkForButtonPress(BUTTON_ENTER)!=BUTTON_ENTER){}
+  while(AV_Functions::checkForButtonPress(BUTTON_ENTER)!=BUTTON_ENTER){}
 
 }
 
@@ -351,7 +351,7 @@ IPAddress Lcd_Menu::setIpPage(IPAddress &temp_SYS_IP_small)  {
   byte curPos=0;
   byte dataPos=0;
   while(true){
-    const uint8_t button = checkForButtonPress(buttons_all, buttons_all_size);
+    const uint8_t button = AV_Functions::checkForButtonPress(buttons_all, buttons_all_size);
       if(button == BUTTON_UP) {
         if(temp_IP_big[dataPos]>=9)temp_IP_big[dataPos]=0;
         else temp_IP_big[dataPos]++;
@@ -466,19 +466,6 @@ void Lcd_Menu::smallToBig(const IPAddress& temp_SYS_IP, byte *bigIp){
   }
 }
 
-uint8_t Lcd_Menu::checkForButtonPress(const uint8_t button) {
-  if(digitalRead(button)) {
-    AV_Functions::beepFor(100);
-    while(digitalRead(button)){}
-    return button;
-  }return 0;
-}
-uint8_t Lcd_Menu::checkForButtonPress(const uint8_t * buttons, const uint8_t size) {
-  for(uint8_t i=0; i<size; i++) {
-    const uint8_t button = checkForButtonPress(buttons[i]);
-    if(button!=0) return button;
-  }return 0;
-}
 
 bool lcd_menu_var_currentState = true;
 unsigned long lcd_menu_var_blinkTime=0;
@@ -508,7 +495,7 @@ boolean Lcd_Menu::confirm(const String &confirm_object, const String &confirm_me
   print_confirm_message(confirmFlag,confirm_message);
 
   while(true){
-    const uint8_t button = checkForButtonPress(horizontal_button_config, buttons_horizontal_size);
+    const uint8_t button = AV_Functions::checkForButtonPress(horizontal_button_config, buttons_horizontal_size);
     if(button == BUTTON_LEFT || button == BUTTON_RIGHT) {
       confirmFlag = !confirmFlag;
       print_confirm_message(confirmFlag,confirm_message);

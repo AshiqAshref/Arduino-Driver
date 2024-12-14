@@ -41,7 +41,6 @@ bool ReminderB::check_for_alarm(const DateTime &curr_time) {
 
 
 void ReminderB::clear_reminder() {
-    time_id_ = 0;
     for(int i=0;i<medicines_size_;i++)
         delete medicines[i];
     medicines_size_=0;

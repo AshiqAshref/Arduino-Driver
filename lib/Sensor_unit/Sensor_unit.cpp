@@ -24,14 +24,14 @@ void Sensor_unit::initializeBoxSensor(){
 extern Box boxes[];
 bool Sensor_unit::check_if_any_box_open() {
     boolean open=false;
-    for(int i=1;i<=16;i++) {
-        if(isOpen(i)) {
+    for(int i=0;i<16;i++) {
+        if(isOpen(boxes[i].box_no())) {
             Serial.print("open: ");
             Serial.println(i);
-            boxes[i-1].setOpen(true);
+            boxes[i].setOpen(true);
             open = true;
         }else{
-            boxes[i-1].setOpen(false);
+            boxes[i].setOpen(false);
         }
     }
     return open;

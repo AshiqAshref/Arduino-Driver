@@ -7,15 +7,15 @@
 
 class Mech_Arm {
     //(1,step,dir)
-    AccelStepper *stepperX; //x=1/4 step
-    AccelStepper *stepperY; //y=1/2 step
-    AccelStepper *stepperZ; //z=1/2 step
+    AccelStepper stepperX; //x=1/4 step
+    AccelStepper stepperY; //y=1/2 step
+    AccelStepper stepperZ; //z=1/2 step
     // Lcd_Menu lcd_menu;
     // Led_Indicator *led_indicator;
 
-    unsigned long xAxis=0;
-    unsigned long yAxis=0;
-    unsigned long zAxis=0;
+    uint32_t xAxis=0;
+    uint32_t yAxis=0;
+    uint32_t zAxis=0;
 
     // unsigned long xCordinate[16]={
     //     17500, 12500, 6500, 0,
@@ -40,17 +40,20 @@ class Mech_Arm {
 
     static void bringEmHomeDummy();
 
-    static boolean unlockBoxDummy(Box *box);
+    // static boolean unlockBoxDummy(Box *box);
 
 
 public:
     // Mech_Arm(const Lcd_Menu &lcd_menu, Led_Indicator *led_indicator);
     Mech_Arm();
-    void initializeSteppers() const;
+    void initializeSteppers() ;
     static void stepperState(byte enable, boolean state);
     void moveStepper();
     boolean resetPosition(byte axis);
-    boolean unlockBox(Box *box);
+
+    void unlockBox(byte box_positions_[], byte box_size);
+
+    void unlockBox(Box *box);
     void unlockAllBox();
     void bringEmHome();
     void flush_();

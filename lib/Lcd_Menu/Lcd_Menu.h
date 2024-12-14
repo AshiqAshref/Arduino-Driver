@@ -30,8 +30,7 @@ public:
     static bool checkIPAddrValid(const IPAddress &ip_small);
     static bool checkSBAddrValid(const IPAddress &sb_small);
 
-    static uint8_t checkForButtonPress(const uint8_t * buttons, uint8_t size);
-    static uint8_t checkForButtonPress(uint8_t button);
+
 
     static String get_IP_big_as_string(const byte *a);
     static void lcd_print_ip_big(byte x, byte y, const byte *IP_big);

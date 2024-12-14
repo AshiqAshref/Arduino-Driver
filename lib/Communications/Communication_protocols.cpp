@@ -1,4 +1,6 @@
 #include "Communication_protocols.h"
+
+#include <AV_Functions.h>
 #include <RTClib.h>
 #include <CrcWriter.h>
 #include <FastCRC.h>
@@ -329,18 +331,6 @@ unsigned long Communication_protocols::bytesToLong(const byte *byte_) {
         (static_cast<long>(byte_[3]));
 }
 
-void Communication_protocols::printBin(const byte aByte) {
-    Serial.print('(');
-    for (int8_t aBit = 7; aBit >= 0; aBit--) {
-        Serial.print(bitRead(aByte, aBit) ? '1' : '0');
-        if(aBit==4) Serial.print(' ');
-    }
-    Serial.print(')');
-}
-void Communication_protocols::printlnBin(const byte aByte) {
-    printBin(aByte);
-    Serial.println();
-}
 
 byte Communication_protocols::extractHour(const String &formated_time) {
     return formated_time.substring(0, 2).toInt();
@@ -358,7 +348,7 @@ void Communication_protocols::printHeader(const byte header) {
     Serial.print(protocol_name);
     if(protocol_as_String(0b00000111)==protocol_name) {
         Serial.print(" ");
-        printBin(header);
+        AV_Functions::printBin(header);
     }
     Serial.println();
 }
@@ -407,6 +397,8 @@ String Communication_protocols::command_as_String(const byte command) {
         return "REMINDERB_CH";
     }if(command == REMINDERB_SND_LOG) {
         return "REMINDERB_SND_LOG";
+    }if(command == GET_BOX_INF) {
+        return "GET_BOX_INF";
     }
     return "unknown_command";
 }

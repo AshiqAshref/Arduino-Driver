@@ -3,6 +3,7 @@
 #include <Command_activate_AP.h>
 #include <Command_daylight_sav.h>
 #include <Command_deactivate_ap.h>
+#include <Command_get_box_inf.h>
 #include <Command_get_network_inf.h>
 #include <Command_get_reminderB.h>
 #include <Command_get_time.h>
@@ -31,9 +32,10 @@ extern Command_daylight_sav command_daylight_sav;
 extern Command_server_ip command_server_ip;
 extern Command_reminderB_change command_reminderB_change;
 extern Command_reminderB_send_log command_reminderB_send_log;
+extern Command_get_box_inf command_get_box_inf;
 
 
-constexpr byte commands_size=8;
+constexpr byte commands_size=9;
 Command *commands[commands_size]= {
     // &command_get_time,
     &command_get_reminder_b,
@@ -43,7 +45,8 @@ Command *commands[commands_size]= {
     &command_daylight_sav,
     &command_server_ip,
     &command_reminderB_change,
-    &command_reminderB_send_log
+    &command_reminderB_send_log,
+    &command_get_box_inf
 }; // NOLINT(*-slicing, *-interfaces-global-init)
 
 
@@ -93,6 +96,9 @@ void CommunicationHandler::handle_communications() {
     }
 }
 
+void CommunicationHandler::send_command_get_network_inf() {
+    send_request_SYN(GET_NETWORK_INF);
+}
 bool CommunicationHandler::get_network_inf_request_handler() {
     Serial.println("NET_INF - REQ_H");
     constexpr Command_enum command = GET_NETWORK_INF;
@@ -154,6 +160,9 @@ bool CommunicationHandler::get_network_inf_response_handler_local() {
 }
 
 
+void CommunicationHandler::send_command_get_reminder_B() {
+    send_request_SYN(GET_REMINDER_B);
+}
 bool CommunicationHandler::get_reminder_b_response_handler(const unsigned long get_reminder_time_key)  {
     Serial.println("REMB RES_H");
     constexpr Command_enum command = GET_REMINDER_B;
@@ -173,16 +182,19 @@ bool CommunicationHandler::get_reminder_b_response_handler(const unsigned long g
 void CommunicationHandler::add_reminderb_to_class(JsonDocument doc) {
     upcommingReminderB.clear_reminder();
     const String time_str = doc["t"].as<String>();
-    upcommingReminderB.set_time_id(doc["ti"]);
     upcommingReminderB.set_time(DateTime(2020,12,12, extractHour(time_str), extractMinute(time_str)));
     upcommingReminderB.set_revision_no(doc["rv"].as<uint32_t>());
     for(size_t i = 0;i<doc["m"].size();i++) {
         byte box_no = doc["m"][i]["b"];--box_no;
-        const auto medicine = new Medicine(&boxes[box_no],doc["m"][i]["d"].as<byte>(), doc["m"][i]["s"].as<bool>());
+        const auto medicine = new Medicine(&boxes[box_no],doc["m"][i]["d"].as<byte>());
         upcommingReminderB.add_medicine(medicine);
     }
 }
 
+
+void CommunicationHandler::send_command_deactivate_ap() {
+    send_request_SYN(DEACTIVATE_AP);
+}
 bool CommunicationHandler::deactivate_AP_response_handler() {
     Serial.println("DCT_AP RES_H");
     constexpr Command_enum command= DEACTIVATE_AP;
@@ -207,6 +219,10 @@ bool CommunicationHandler::deactivate_AP_request_handler()  {
     send_status_SUCCESS(command);
     network_info.set_needs_update();
     return true;
+}
+
+void CommunicationHandler::send_command_activate_ap() {
+    send_request_SYN(ACTIVATE_AP);
 }
 bool CommunicationHandler::activate_AP_response_handler()  {
     Serial.println("ACT_AP RES_H");
@@ -298,7 +314,6 @@ bool CommunicationHandler::daylight_sav_send_dls(const bool daylight_sav) {
 }
 
 
-
 void CommunicationHandler::send_command_server_ip() {
     send_request_SYN(SERVER_IP);
 }
@@ -361,7 +376,9 @@ bool CommunicationHandler::server_ip_send_ip(const IPAddress& server_ip) {
     return true;
 }
 
-
+void CommunicationHandler::send_command_get_time() {
+    send_request_SYN(GET_TIME);
+}
 bool CommunicationHandler::NTP_response_handler()  {
     Serial.println("NTP RES_H");
     constexpr Command_enum command = GET_TIME;
@@ -376,13 +393,12 @@ bool CommunicationHandler::NTP_response_handler()  {
     return false;
 }
 void CommunicationHandler::setTime(const unsigned long ux_time) {
-    rtc.adjust(DateTime(2020,12,12,13,38,30));//TEST ONLY
-    // rtc.adjust(DateTime(ux_time));
+    // rtc.adjust(DateTime(2020,12,12,13,38,30));//TEST ONLY
+    rtc.adjust(DateTime(ux_time));
 
     Serial.print("Time : ");
     Serial.println(ux_time);
 }
-
 
 
 void CommunicationHandler::send_command_reminderB_change() {
@@ -398,9 +414,9 @@ bool CommunicationHandler::reminderB_change_request_handler() {
     }
     send_status_SUCCESS(command);
     command_get_reminder_b.send_request(rtc.now().unixtime());
+    command_get_box_inf.send_request();
     return true;
 }
-
 bool CommunicationHandler::reminderB_change_response_handler() {
     Serial.println("RMB_CNG RES_H");
     constexpr Command_enum command = REMINDERB_CH;
@@ -413,13 +429,13 @@ bool CommunicationHandler::reminderB_change_response_handler() {
         return false;
     }
     send_status_SUCCESS(command);
-    if(upcommingReminderB.revision_no()!=revision_no)
+    if(upcommingReminderB.revision_no()!=revision_no) {
         command_get_reminder_b.send_request(rtc.now().unixtime());
+        command_get_box_inf.send_request();
+    }
     return true;
 
 }
-
-
 
 
 void CommunicationHandler::send_command_reminderB_send_log() {
@@ -435,7 +451,6 @@ bool CommunicationHandler::reminderB_send_log_request_handler() {
     send_status_SUCCESS(command);
     return true;
 }
-
 bool CommunicationHandler::reminderB_send_log_response_handler(const JsonDocument &last_reminder) {
     Serial.println("RMB_LOG RES_H");
     constexpr Command_enum command = REMINDERB_SND_LOG;
@@ -451,24 +466,88 @@ bool CommunicationHandler::reminderB_send_log_response_handler(const JsonDocumen
 
 
 
+bool box_json_to_class(JsonDocument box_doc) {
+    if(box_doc.as<JsonArray>().isNull()) {
+        if(!AV_Functions::validate_box_Json(box_doc)) return false;
+        for (int i = 0; i < 16; i++) {
+            const uint8_t box_no = box_doc["b"].as<uint8_t>();
+            if(boxes[i].box_no()==box_no) {
+                boxes[i].set_medicine_amount(box_doc["a"].as<uint16_t>());
+                boxes[i].set_medicine_name(box_doc["n"].as<String>());
+                boxes[i].set_box_status(BOX_STATUS_DEFAULT);
+                return true;
+            }
+        }
+        return false;
+    }
 
-void CommunicationHandler::send_command_get_time() {
-    send_request_SYN(GET_TIME);
+    for (int i = 0; i < 16; i++) {
+        bool found_flag=false;
+        for (size_t j = 0; j < box_doc.size(); j++) {
+            if(boxes[i].box_no()==box_doc[j]["b"].as<uint8_t>()) {
+                found_flag=true;
+                boxes[i].set_medicine_amount(box_doc[j]["a"].as<uint16_t>());
+                boxes[i].set_medicine_name(box_doc[j]["n"].as<String>());
+                boxes[i].set_box_status(BOX_STATUS_DEFAULT);
+            }
+        }
+        if(!found_flag)
+            if(boxes[i].box_status()!=BOX_STATUS_CURRENT)
+                boxes[i].set_box_status(BOX_STATUS_NOT_IN_USE);
+    }
+    return true;
 }
 
-void CommunicationHandler::send_command_get_network_inf() {
-    send_request_SYN(GET_NETWORK_INF);
+JsonDocument box_class_to_Json() {
+    JsonDocument doc;
+    const auto main_doc_array= doc.to<JsonArray>();
+    for (int i = 0; i < 16; i++) {
+        if(boxes[i].box_status()!=BOX_STATUS_NOT_IN_USE) {
+            JsonDocument box_doc;
+            box_doc["b"] = boxes[i].box_no();
+            box_doc["n"] = boxes[i].medicine_name();
+            box_doc["a"] = boxes[i].medicine_amount();
+            // ReSharper disable once CppExpressionWithoutSideEffects
+            main_doc_array.add(box_doc);
+        }
+    }
+    return doc;
 }
 
-void CommunicationHandler::send_command_get_reminder_B() {
-    send_request_SYN(GET_REMINDER_B);
+bool CommunicationHandler::get_box_inf_request_handler() {
+    Serial.println("GET_BOX - REQ_H");
+    constexpr Command_enum command = GET_BOX_INF;
+    if(send_response_SYN_ACK(command)!=ACK) {
+        close_session(command);
+        return false;
+    }
+
+    if(sendJsonDocument(box_class_to_Json(),command)!=SUCCESS) {
+        close_session(command);
+        return false;
+    }
+    send_status_SUCCESS(command);
+    return true;
+}
+bool CommunicationHandler::get_box_inf_response_handler() {
+    Serial.println("GET_BOX RES_H");
+    constexpr Command_enum command = GET_BOX_INF;
+    send_response_ACK(command);
+
+    const JsonDocument box_doc =  receive_jsonDocument(command);
+    Serial.print("GOT BOX_DOC: ");
+    serializeJson(box_doc,Serial);
+    Serial.println();
+    if(box_doc.size()==0) {close_session(command); return false;}
+
+    if(!box_json_to_class(box_doc)) {close_session(command);return false;}
+    send_status_SUCCESS(command);
+    return true;
+}
+void CommunicationHandler::send_command_get_box_inf() {
+    send_request_SYN(GET_BOX_INF);
 }
 
 
-void CommunicationHandler::send_command_activate_ap() {
-    send_request_SYN(ACTIVATE_AP);
-}
-void CommunicationHandler::send_command_deactivate_ap() {
-    send_request_SYN(DEACTIVATE_AP);
-}
+
 

@@ -12,11 +12,6 @@ public:
         : box_(box),
           dosage_(dosage) {
     }
-    Medicine(Box *box, const byte dosage, const bool success)
-        : box_(box),
-          dosage_(dosage),
-          success_(success){
-    }
     ~Medicine()=default;
 
     Box *box() const {return this->box_;}
@@ -26,7 +21,7 @@ public:
     // void set_box(Box box) {this->box_ = &box;}
     void set_dosage(const byte dosage) {this->dosage_ = dosage;}
     void set_success(const bool status) {
-        this->box_->set_status(BOX_STATUS_DEFAULT);
+        this->box_->set_box_status(BOX_STATUS_DEFAULT);
         this->success_=status;
     }
 

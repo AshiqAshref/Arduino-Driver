@@ -13,7 +13,6 @@ enum TimeMode:bool{
 };
 
 class ReminderB{
-    unsigned int time_id_ = 0;
     DateTime time_= DateTime();
     String display_time_= "NA";
     TimeMode display_time_format=TIME_MODE_12;
@@ -44,12 +43,6 @@ public:
 
     Medicine* get_medicine(const byte index) const {return this->medicines[index];}
     void clear_reminder();
-
-
-    unsigned int time_id() const {return time_id_;}
-    void set_time_id(const unsigned int time_id){
-        this->time_id_ = time_id;
-    }
 
     DateTime time() const{return this->time_;};
     void set_time(const DateTime &time){
@@ -107,7 +100,6 @@ public:
 
     void toStringPrint() const {
         Serial.print(" {");
-        Serial.print(R"("time_id" : )" ); Serial.print(this->time_id_);
         Serial.print(R"(", time" : )" + display_time());
         Serial.print(R"(", medicines" : )");
         get_medicines_as_String_print();
@@ -116,7 +108,6 @@ public:
 
     String toString() const{
         return  " {"
-                        R"("tid" : )" + static_cast<String>(time_id()) +
                         R"(", t" : )" + display_time() +
                         R"(", m" : )" + get_medicines_as_String() +
                     "} ";
